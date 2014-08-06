@@ -9,6 +9,7 @@
 		'output'=>''
 	);
 
+function common_setPath($path = ''){$GLOBALS['inc']['common']['path'] = $path;}
 	function common_setBase($base = ''){$GLOBALS['inc']['common']['base'] = $base;}
 	function common_setExt($ext = ''){$GLOBALS['inc']['common']['ext'] = $ext;}
 	function common_loadScript($script = ''){$GLOBALS['inc']['common']['js.files'][] = $script;}
