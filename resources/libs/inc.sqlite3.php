@@ -310,6 +310,7 @@
 	function sqlite3_getWhere($tableName = false,$whereClause = false,$params = array()){
 		if(!isset($params['indexBy'])){$params['indexBy'] = 'id';}
 		$shouldClose = false;if(!isset($params['db']) || !$params['db']){$params['db'] = sqlite3_open( (isset($params['db.file']) ? $params['db.file'] : $GLOBALS['api']['sqlite3']['database']) ,6, (isset($params['db.password']) ? $params['db.password'] : false) );$shouldClose = true;}
+		if($params['db'] === false){return [];}
 		$selectString = '*';if(isset($params['selectString'])){$selectString = $params['selectString'];}
 		$GLOBALS['DB_LAST_QUERY'] = 'SELECT '.$selectString.' FROM ['.$tableName.'] '.(($whereClause !== false) ? 'WHERE '.$whereClause : '');
 		if(isset($params['group'])){$GLOBALS['DB_LAST_QUERY'] .= ' GROUP BY '.$params['db']->escapeString($params['group']);}
@@ -321,8 +322,9 @@
 			if($shouldClose){sqlite3_close($params['db']);}
 			return $rows;
 		}
+
 		$r = sqlite3_query($GLOBALS['DB_LAST_QUERY'],$params['db']);
-		$rows = array();
+		$rows = [];
 
 		if($r && $params['indexBy'] !== false){while($row = sqlite3_fetchArray($r,$params['db'])){$rows[$row[$params['indexBy']]] = $row;}}
 		if($r && $params['indexBy'] === false){while($row = sqlite3_fetchArray($r,$params['db'])){$rows[] = $row;}}
