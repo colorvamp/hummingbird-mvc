@@ -2,13 +2,14 @@
 	$GLOBALS['inc']['common'] = array(
 		'path'=>'../views/',
 		'ext'=>'.php',
-		'base'=>'base/a',
+		'base'=>'base',
 		'replace'=>0,
 		'css.files'=>array(),
 		'js.files'=>array(),
 		'output'=>''
 	);
 
+	function common_setPath($path = ''){$GLOBALS['inc']['common']['path'] = $path;}
 	function common_setBase($base = ''){$GLOBALS['inc']['common']['base'] = $base;}
 	function common_setExt($ext = ''){$GLOBALS['inc']['common']['ext'] = $ext;}
 	function common_loadScript($script = ''){$GLOBALS['inc']['common']['js.files'][] = $script;}
@@ -56,6 +57,7 @@
 		/* END-META */
 		$GLOBALS['inc']['common']['output'] = common_replaceInTemplate($GLOBALS['inc']['common']['output'],$TEMPLATE);
 		$GLOBALS['inc']['common']['output'] = preg_replace('/{%[a-zA-Z0-9_\.]+%}/','',$GLOBALS['inc']['common']['output']);
+
 		return $GLOBALS['inc']['common']['output'];
 	}
 	$GLOBALS['COMMON']['SNIPPETCACHE'] = array();
@@ -119,4 +121,24 @@
 		return ($pool) ? common_replaceInTemplate($p,$pool) : $p;
 	}
 	/* END-Pager */
+
+	function common_init(){
+		if(!isset($GLOBALS['currentPage'])){$GLOBALS['currentPage'] = 1;}
+		$userIsLogged = users_isLogged();
+		//FIXME: debería estar en modes en la base de datos
+		if($userIsLogged){
+			$isPublisher = users_checkModes('publisher');
+			$isAdmin = users_checkModes('admin');
+		}
+
+		$GLOBALS['TEMPLATE']['TOPMENU'] = 
+		($userIsLogged  ? T.T.'<li><a href="{%baseURL%}u/'.$GLOBALS['user']['userNick'].'">Perfil</a></li>'.N : '').
+		(!$userIsLogged ? T.T.'<li><a href="{%baseURL%}u/login">Login</a></li>'.N : '').
+		(!$userIsLogged ? T.T.'<li><a href="{%baseURL%}u/register">Registro</a></li>'.N : '').
+		($userIsLogged && $isPublisher ? T.T.'<li><a href="{%baseURL%}r/feather/">featherCMS</a></li>'.N : '').
+		($userIsLogged  ? T.T.'<li><a href=\'{%baseURL%}u/logout\'>Logout</a></li>'.N : '').
+		($userIsLogged  ? T.T.'<li><img src="{%baseURL%}u/avatar/'.$GLOBALS['user']['userNick'].'-32.jpeg"></li>'.N : '').
+		'';
+	}
+
 

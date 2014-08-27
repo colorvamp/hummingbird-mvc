@@ -20,13 +20,11 @@
 				common_r();
 		}}
 
-
 		/* INI-Checking modes */
-		if(($d = dirname($GLOBALS['api']['shoutbox']['db'])) && !is_writable($d)){
+		if(($d = dirname($GLOBALS['api']['shoutbox']['db'])) && ( !file_exists($d) || !is_writable($d) || !is_writable($GLOBALS['api']['shoutbox']['db']) )){
 			$TEMPLATE['permission.warning'] = common_loadSnippet('snippets/permission.warning');
 		}
 		/* END-Checking modes */
-
 
 		/* INI-Painting the shouts */
 		$shoutOBs = shoutbox_getWhere('shoutResponseTo = 0');
