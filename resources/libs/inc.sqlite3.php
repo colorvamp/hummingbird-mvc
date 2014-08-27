@@ -12,13 +12,15 @@
 		'iv.padding'=>25
 	),$GLOBALS['api']['sqlite3']);
 
-	function sqlite3_open($filePath = false,$mode = 6,$password = null){
-		if(is_array($filePath)){do{
-			$params = $filePath;
+	function sqlite3_open(&$params = false,$mode = 6,$password = null){
+		$filePath = false;
+		if(is_string($params)){$filePath = $params;}
+		if(is_array($params)){do{
+			if(isset($params['db']) && is_object($params['db'])){return $params['db'];}
 			if(isset($params['db.file'])){$filePath = $params['db.file'];}
 
-			if(!is_string($filePath)){$filePath = $GLOBALS['api']['sqlite3']['database'];}
 		}while(false);}
+		if(!is_string($filePath)){$filePath = $GLOBALS['api']['sqlite3']['database'];}
 
 		//FIXME: si se intenta abrir una base de datos que ya esté abierta, se podría enviar la conexion cacheada, aunq habría problemas con los close
 		/* Mode 6 = (SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE) */
@@ -50,6 +52,9 @@
 				return openssl_decrypt(substr($data,$GLOBALS['api']['sqlite3']['iv.padding']),'AES-256-CBC',$password,0,$iv);
 			});
 		}
+
+		if(isset($params)){$params['db'] = $db;}
+
 		return $db;
 	}
 	function sqlite3_close(&$db = false,$shouldCommit = false){
@@ -157,7 +162,11 @@
 
 	function sqlite3_query($q,$db){$oldmask = umask(0);$r = @$db->query($q);$secure = 0;while($secure < 5 && !$r && $db->lastErrorCode() == 5){usleep(200000);$r = @$db->query($q);$secure++;}umask($oldmask);$GLOBALS['DB_LAST_QUERY_ERRNO'] = $db->lastErrorCode();$GLOBALS['DB_LAST_QUERY_ERROR'] = $db->lastErrorMsg();return $r;}
 	function sqlite3_querySingle($q,$db){$oldmask = umask(0);$r = @$db->querySingle($q,1);$secure = 0;while($secure < $GLOBALS['SQLITE3']['queryRetries'] && !$r && $db->lastErrorCode() == 5){usleep(200000);$r = @$db->querySingle($q,1);$secure++;}umask($oldmask);return $r;}
-	function sqlite3_exec($q,$db){$oldmask = umask(0);$r = @$db->exec($q);$secure = 0;while($secure < $GLOBALS['SQLITE3']['queryRetries'] && !$r && $db->lastErrorCode() == 5){usleep(200000);$r = @$db->exec($q);$secure++;}umask($oldmask);$GLOBALS['DB_LAST_QUERY_ERRNO'] = $db->lastErrorCode();$GLOBALS['DB_LAST_QUERY_ERROR'] = $db->lastErrorMsg();return $r;}
+	function sqlite3_exec($q,$db){
+		if($q == 'BEGIN;'){$db->transaction = true;}
+		if($q == 'COMMIT;'){$db->transaction = false;}
+		$oldmask = umask(0);$r = @$db->exec($q);$secure = 0;while($secure < $GLOBALS['SQLITE3']['queryRetries'] && !$r && $db->lastErrorCode() == 5){usleep(200000);$r = @$db->exec($q);$secure++;}umask($oldmask);$GLOBALS['DB_LAST_QUERY_ERRNO'] = $db->lastErrorCode();$GLOBALS['DB_LAST_QUERY_ERROR'] = $db->lastErrorMsg();return $r;
+	}
 	function sqlite3_fetchArray($r,$db){
 		$row = @$r->fetchArray(SQLITE3_ASSOC);
 		if($row === null){$secure = 0;while($secure < $GLOBALS['SQLITE3']['queryRetries'] && $row === null && $db->lastErrorCode() == 5){usleep(200000);$row = @$r->fetchArray(SQLITE3_ASSOC);$secure++;}}
@@ -292,9 +301,9 @@
 		return array_values($result);
 	}
 
-	function sqlite3_getSingle($tableName = false,$whereClause = false,$params = array()){
+	function sqlite3_getSingle($tableName = false,$whereClause = false,$params = []){
 		if(!isset($params['indexBy'])){$params['indexBy'] = 'id';}
-		$shouldClose = false;if(!isset($params['db']) || !$params['db']){$params['db'] = sqlite3_open( (isset($params['db.file']) ? $params['db.file'] : $GLOBALS['api']['sqlite3']['database']) ,6, (isset($params['db.password']) ? $params['db.password'] : false) );$shouldClose = true;}
+		$shouldClose = false;if(!isset($params['db']) || !$params['db']){sqlite3_open( $params ,6, (isset($params['db.password']) ? $params['db.password'] : false) );$shouldClose = true;}
 		$selectString = '*';if(isset($params['selectString'])){$selectString = $params['selectString'];}
 		$GLOBALS['DB_LAST_QUERY'] = 'SELECT '.$selectString.' FROM ['.$tableName.'] '.(($whereClause !== false) ? 'WHERE '.$whereClause : '');
 		if(isset($params['group'])){$GLOBALS['DB_LAST_QUERY'] .= ' GROUP BY '.$params['db']->escapeString($params['group']);}
@@ -309,7 +318,8 @@
 	}
 	function sqlite3_getWhere($tableName = false,$whereClause = false,$params = array()){
 		if(!isset($params['indexBy'])){$params['indexBy'] = 'id';}
-		$shouldClose = false;if(!isset($params['db']) || !$params['db']){$params['db'] = sqlite3_open( (isset($params['db.file']) ? $params['db.file'] : $GLOBALS['api']['sqlite3']['database']) ,6, (isset($params['db.password']) ? $params['db.password'] : false) );$shouldClose = true;}
+		$shouldClose = false;if(!isset($params['db']) || !$params['db']){$params['db'] = sqlite3_open( $params ,6, (isset($params['db.password']) ? $params['db.password'] : false) );$shouldClose = true;}
+		if($params['db'] === false){return [];}
 		$selectString = '*';if(isset($params['selectString'])){$selectString = $params['selectString'];}
 		$GLOBALS['DB_LAST_QUERY'] = 'SELECT '.$selectString.' FROM ['.$tableName.'] '.(($whereClause !== false) ? 'WHERE '.$whereClause : '');
 		if(isset($params['group'])){$GLOBALS['DB_LAST_QUERY'] .= ' GROUP BY '.$params['db']->escapeString($params['group']);}
@@ -321,8 +331,9 @@
 			if($shouldClose){sqlite3_close($params['db']);}
 			return $rows;
 		}
+
 		$r = sqlite3_query($GLOBALS['DB_LAST_QUERY'],$params['db']);
-		$rows = array();
+		$rows = [];
 
 		if($r && $params['indexBy'] !== false){while($row = sqlite3_fetchArray($r,$params['db'])){$rows[$row[$params['indexBy']]] = $row;}}
 		if($r && $params['indexBy'] === false){while($row = sqlite3_fetchArray($r,$params['db'])){$rows[] = $row;}}
@@ -334,7 +345,7 @@
 		return $rows;
 	}
 	function sqlite3_deleteWhere($tableName = false,$whereClause = false,$params = array()){
-		$shouldClose = false;if(!isset($params['db']) || !$params['db']){$params['db'] = sqlite3_open((isset($params['db.file'])) ? $params['db.file'] : $GLOBALS['api']['sqlite3']['database']);sqlite3_exec('BEGIN',$params['db']);$shouldClose = true;}
+		$shouldClose = false;if(!isset($params['db']) || !$params['db']){$params['db'] = sqlite3_open( $params ,6, (isset($params['db.password']) ? $params['db.password'] : false) );$shouldClose = true;}
 		$GLOBALS['DB_LAST_QUERY'] = 'DELETE FROM ['.$tableName.'] '.(($whereClause !== false) ? 'WHERE '.$whereClause : '');
 		$r = sqlite3_exec($GLOBALS['DB_LAST_QUERY'],$params['db']);
 		$GLOBALS['DB_LAST_QUERY_CHANG'] = $params['db']->changes();
@@ -372,6 +383,37 @@
 		return $rows;
 	}
 	/* END-Decrypt row data */
+
+	function sqlite3_save($tableName = '',&$data = [],$validator = false,$params = []){
+		//FIXME: atablename support
+		$db = sqlite3_open($params);
+		if(isset($data['id'])){$data['_id_'] = $data['id'];unset($data['id']);}
+
+		/* Remove invalid params */
+		foreach($data as $k=>$v){
+			if(!isset($GLOBALS['tables'][$tableName][$k])){unset($data[$k]);}
+		}
+		if(!$data){return $data;}
+
+		$oldData = [];
+		if(isset($data['_id_']) && !($oldData = sqlite3_getSingle($tableName,'id = '.$data['_id_'],$params)) ){
+			unset($data['_id_']);
+		}
+		$data = $data+$oldData;
+		if(isset($data['id'])){unset($data['id']);}
+
+		/* INI-validations */
+		if($validator && is_callable($validator)){
+			$data = $validator($data,$params);
+			if(isset($data['errorDescription'])){return $data;}
+		}
+		/* END-validations */
+
+		$r = sqlite3_insertIntoTable2($tableName,$data,$params);
+		if(isset($r['errorDescription'])){return $r;}
+		$data['id'] = $r['id'];
+		return $data;
+	}
 
 	//FIXME: rehacer
 	/* $origTableName = string - $tableSchema = string ($GLOBALS['tables'][$tableSchema]) */
