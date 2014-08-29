@@ -267,7 +267,7 @@
 	}
 
 	function sqlite3_getFullText($tableName = false,$criteria = '',$fields = array(),$params = array()){
-		$shouldClose = false;if(!isset($params['db']) || !$params['db']){$params['db'] = sqlite3_open((isset($params['db.file'])) ? $params['db.file'] : $GLOBALS['api']['sqlite3']['database'],SQLITE3_OPEN_READONLY);$shouldClose = true;}
+		$shouldClose = false;if(!isset($params['db']) || !$params['db']){sqlite3_open( $params ,6, (isset($params['db.password']) ? $params['db.password'] : false) );$shouldClose = true;}
 		$selectString = '*';if(isset($params['selectString'])){$selectString = $params['selectString'];}
 		//FIXME: dar soporte a los 2 tipos de limit
 		$limitRows = 500;if(isset($params['row.limit'])){$limitRows = $params['row.limit'];}
