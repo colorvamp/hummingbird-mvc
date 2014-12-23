@@ -21,6 +21,7 @@
 	],$GLOBALS['api']['shoutbox']);
 
 	function shoutbox_save($data = [],$params = []){
+		include_once('inc.sqlite3.php');
 		include_once('inc.strings.php');
 
 		if(!isset($params['db.file'])){$params['db.file'] = $GLOBALS['api']['shoutbox']['db'];}
