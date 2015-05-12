@@ -53,7 +53,7 @@
 			});
 		}
 
-		if(isset($params)){$params['db'] = $db;}
+		if(isset($params) && is_array($params)){$params['db'] = $db;}
 
 		return $db;
 	}
@@ -205,7 +205,7 @@
 		return sqlite3_insertIntoTable2($tableName,$array,array('db'=>$db),$aTableName);
 	}
 	function sqlite3_insertIntoTable2($tableName,$array,$params = array(),$aTableName = false){
-		$shouldClose = false;if(!isset($params['db']) || !$params['db']){$params['db'] = sqlite3_open( (isset($params['db.file']) ? $params['db.file'] : $GLOBALS['api']['sqlite3']['database']) ,6, (isset($params['db.password']) ? $params['db.password'] : false) );$shouldClose = true;}
+		$shouldClose = false;if(!isset($params['db']) || !$params['db']){sqlite3_open( $params ,6, (isset($params['db.password']) ? $params['db.password'] : false) );$shouldClose = true;}
 		$tableKeys = array();foreach($array as $key=>$value){$array[$key] = $params['db']->escapeString($value);if($key[0] == '_' && $key[strlen($key)-1] == '_'){$newkey = substr($key,1,-1);$tableKeys[$newkey] = $array[$newkey] = $value;unset($array[$key]);}}
 		if(!isset($params['db.encrypt'])){$params['db.encrypt'] = array();}
 
@@ -399,7 +399,7 @@
 		if(isset($data['_id_']) && !($oldData = sqlite3_getSingle($tableName,'id = '.$data['_id_'],$params)) ){
 			unset($data['_id_']);
 		}
-		$data = $data+$oldData;
+		if($oldData){$data = $data+$oldData;}
 		if(isset($data['id'])){unset($data['id']);}
 
 		/* INI-validations */

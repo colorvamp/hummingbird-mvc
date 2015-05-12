@@ -83,5 +83,12 @@ work now.
 /etc/init.d/apache2 restart
 ```
 
+Automatic Installation (WIP)
+----------------------------
+
+```
+php install.php
+```
+
 
 ![Hummingbird-mvc](http://i.imgur.com/TEvoujO.png "Hummingbird-mvc")
