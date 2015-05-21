@@ -1,5 +1,14 @@
 #!/usr/bin/php
 <?php
+	if( !function_exists('readline') ){
+		function readline($prompt = null){
+			if($prompt){echo $prompt;}
+			$fp   = fopen('php://stdin','r');
+			$line = rtrim(fgets($fp,1024));
+			return $line;
+		}
+	}
+
 	if( !is_writable('/etc/hosts') ){
 		echo 'PERMISSION_DENIED: try with "sudo"'.PHP_EOL;
 		exit;
@@ -12,7 +21,17 @@
 		//exit;
 	}
 
-	//FIXME: move the folder
+	/* INI-Dependencies */
+	if( !class_exists('SQLite3') ){
+		$r = shell_exec('sudo apt-get install php5-sqlite');
+	}
+	/* END-Dependencies */
+
+	$nameCurrent = basename(dirname(__FILE__));
+	$pathCurrent = dirname(__FILE__);
+	if( $nameCurrent != $name ){
+		rename($pathCurrent,$path);
+	}
 
 	$domain = '
 		<VirtualHost *:80>
@@ -36,3 +55,5 @@
 	file_put_contents('/etc/apache2/sites-available/'.$confFile,$domain);
 	$r = shell_exec('a2ensite '.$confFile);
 	$r = shell_exec('/etc/init.d/apache2 restart');
+
+
