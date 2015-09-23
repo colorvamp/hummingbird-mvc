@@ -7,7 +7,7 @@
 	function strings_clean($str = '',$lenth = false){
 		$str = str_replace([PHP_EOL,'</p><p>'],[' ',' '],$str);
 		$str = str_replace(['&nbsp;','<br>','<br/>'],' ',$str);
-		$str = html_entity_decode($str);
+		$str = html_entity_decode($str,ENT_QUOTES);
 		$str = strip_tags($str);
 		$str = preg_replace('/[ \n\r\t]+/',' ',$str);
 		if($lenth && mb_strlen($str) > $lenth){
@@ -15,15 +15,18 @@
 			if( ($char = substr($str,-1)) && (ord($char) == 195/* Ã */ || ord($char) == 194/* � */) ){$str = substr($str,0,-1);}
 			$str .= ' ...';
 		}
-		return trim($str);
+		return strings_toUTF8(trim($str));
 	}
 	function strings_meta_description($str = ''){
 		$str = strings_clean($str,160);
 		return str_replace(['"'],['\''],$str);
 	}
+	function strings_tags_clean($tags = false){
+		if(is_string($tags)){$tags = explode(',',$tags);}
+		foreach($tags as $k=>$tag){$tags[$k] = strings_toURL($tag);}
+		return array_diff(array_unique($tags),['']);
+	}
 
-	function strings_fixString($str){return str_replace($GLOBALS['strings_specials'],$GLOBALS['strings_normals'],strtolower($str));}
-	function strings_stringToURL($str){return preg_replace(array('/[ |\.|_]/','/[^a-zA-Z0-9\-]*/','(^\-|[\-]*$)','/[\-]{2,}/'),array('-','','','-'),strings_fixString($str));}
 	function strings_text_clean($str = ''){
 		$str = str_replace(['&nbsp;','<br>','<br/>'],' ',$str);
 		$str = html_entity_decode($str);
@@ -31,14 +34,57 @@
 		$str = preg_replace('/[ \n\r\t]+/',' ',$str);
 		return strings_toUTF8(trim($str));
 	}
-	function strings_tags_clean($tags = false){
-		if(is_string($tags)){$tags = explode(',',$tags);}
-		foreach($tags as $k=>$tag){$tags[$k] = strings_toURL($tag);}
-		return array_diff(array_unique($tags),['']);
+
+	function strings_jsToArray($js = ''){
+		$js = str_replace(['\\\'','\n'],['&#39;','<br>'],$js);
+		/* This one changes {site:asd} for {"site":asd} */
+		$js = preg_replace('/(,|\{|\[)[ \t\n\r]*(\w+)[ ]*:[ ]*/','$1"$2":',$js);
+		/* Support for arrays instead of objects */
+		//$js = preg_replace('/(,|\[)[ \t\n]*(\w+)[ ]*:[ ]*/','$1"$2":',$js);
+		//preg_match('/(,|\{|\[)[ \t\n\r]*(.)/',$js,$m);
+		//print_r($m);
+
+		/* This one changes { 'site' :  for {"site": */
+		$js = preg_replace_callback('/(?<prefix>,|\{)[ \t\n\r]*\'(?<value>\w+)\'[ \t\n]*:[ \t\n\r]*/',function($n){
+			return $n['prefix'].'"'.$n['value'].'":';
+		},$js);
+
+		/* This one changes ['site',30] for ["site",30] */
+		$js = preg_replace_callback('/(?<prefix>,|\[)[ \t\n\r]*\'(?<value>\w+)\'[ ]*(?<sufix>,|\])/',function($n){
+			return $n['prefix'].'"'.$n['value'].'"'.$n['sufix'];
+		},$js);
+
+		$js = preg_replace_callback('/"[ ]*:[ ]*\"(?<value>.*?)\"[ \n\t\r]*(?<separator>,"|\}$|]$|\}]|]\}|\}|])/',function($n){
+			$v = str_replace('\\"','"',$n['value']);
+			$v = str_replace('"','\\"',$v);
+			return '":"'.$v.'"'.$n['separator'];
+		},$js);
+
+		/* This one changes {"site":'asd'} for {"site":"asd"} */
+		$js = preg_replace_callback('/":\'(?<value>[^\']*)\'[ \n\t\r]*(?<separator>,"|\}$|]$|\}]|]\}|\}|])/',function($n){
+			return '":'.json_encode(stripslashes($n['value'])).$n['separator'];
+		},$js);
+
+		/* Integer expresions */
+		$js = preg_replace_callback('/parseInt\((?<eval>[^\)]+)\)/',function($n){
+			eval('$result = '.$n['eval'].';');
+			return intval($result);
+		},$js);
+
+		/* Boolean expresions */
+		$js = preg_replace_callback('/":(?<eval>[falsetrue\&\!\|\(\) ]+)(?<separator>,)/',function($n){
+			if( $n['eval'] == 'false' || $n['eval'] == 'true' ){return $n[0];}
+			eval('$result = '.$n['eval'].';');
+			return '":'.($result ? 'true' : 'false').$n['separator'];
+		},$js);
+
+		return json_decode($js,1);
 	}
+
 	function strings_discard_spanish($str){
 		return str_replace(array('-con-','-al-','-del-','-el-','-en-'),'-',$str);
 	}
+
 	function strings_detect_UTF8($string){
 		return preg_match('%(?:
 		[\xC2-\xDF][\x80-\xBF]             # non-overlong 2-byte

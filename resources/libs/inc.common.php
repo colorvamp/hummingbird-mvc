@@ -6,37 +6,58 @@
 		'replace'=>0,
 		'css.files'=>array(),
 		'js.files'=>array(),
-		'reg.replacement'=>'/{%[^%]+%}/',
-		'output'=>''
+		'output'=>'',
+		'photo.path'=>'../images/default/'
 	);
+	if( ini_get('pcre.backtrack_limit') < 2000000){ini_set('pcre.backtrack_limit','2M');}
 
 	function common_setPath($path = ''){$GLOBALS['inc']['common']['path'] = $path;}
 	function common_setBase($base = ''){$GLOBALS['inc']['common']['base'] = $base;}
 	function common_setExt($ext = ''){$GLOBALS['inc']['common']['ext'] = $ext;}
-	function common_loadScript($script = ''){$GLOBALS['inc']['common']['js.files'][] = $script;}
+	function common_loadScript($script = '',$attribs = ['async']){
+		$GLOBALS['inc']['common']['js.files'][] = ['url'=>$script,'attr'=>$attribs];
+	}
+	function common_loadStyle($style = ''){$GLOBALS['inc']['common']['css.files'][] = $style;}
 	function common_findKword($kword,$pool = false){if($pool == false){$pool = &$GLOBALS;}while(!isset($pool[$kword]) && ($b = strpos($kword,'_'))){$poolName = substr($kword,0,$b);$kword = substr($kword,$b+1);if(!isset($pool[$poolName])){return false;}$pool = &$pool[$poolName];}return (isset($pool[$kword])) ? $pool[$kword] : false;}
 	function common_resetReplaceIteration(){$GLOBALS['inc']['common']['replace'] = 0;}
-	function common_replaceInTemplate($blob,$pool = false,$reps = false){
+	function common_replaceLogic($blob,$pool = false,$reps = false){
+		global $TEMPLATE;
 
 		/* Ahora reemplazamos parte de la lógica */
 		$GLOBALS['inc']['common']['replace'] = 0;
-		while(preg_match('/{%#([a-zA-Z0-9_\.]+)%}(.*?){%\/\1%}/sm',$blob)){
+		while( preg_match('/{%[#\^]([a-zA-Z0-9_\.]+)%}(.*?){%\/\1%}/sm',$blob) ){
 			$GLOBALS['inc']['common']['replace']++;
 			if($GLOBALS['inc']['common']['replace'] > 20){echo 'max replaces';exit;}
 
-			$blob = preg_replace_callback('/{%#([a-zA-Z0-9_\.]+)%}(.*?){%\/\1%}/sm',function($m) use (&$pool){
-				if( ($word = common_findKword($m[1],$pool)) === false || !$word ){return '';}
+			$blob = preg_replace_callback('!{%(?<operator>[#\^])(?<word>[a-zA-Z0-9_\.]+)%}(?<snippet>.*?){%/\2%}!sm',function($m) use (&$pool,&$TEMPLATE){
+				if( ($word = common_findKword($m['word'],$pool)) === false ){
+					$word = common_findKword($m['word'],$TEMPLATE);
+				}
+				if( !$word ){
+					if( $m['operator'] == '^' ){return $m['snippet'];}
+					return '';
+				}
+				if( $m['operator'] == '^' ){return '';}
+
 				/* INI-Soporte para Arrays */
 				if( is_array($word) ){
 					$blob    = '';
-					$snippet = $m[2];
-					foreach( $word as $elem ){$blob .= common_replaceInTemplate($snippet,$elem);}
+					$snippet = $m['snippet'];
+					foreach( $word as $elem ){
+						if( !is_array($elem) ){$elem = ['.'=>$elem];}
+						$blob .= common_replaceInTemplate($snippet,$elem);
+					}
 					return $blob;
 				}
 				/* END-Soporte para Arrays */
-				return $m[2];
+				return $m['snippet'];
 			},$blob);
 		}
+
+		return $blob;
+	}
+	function common_replaceInTemplate($blob,$pool = false,$reps = false){
+		$blob = common_replaceLogic($blob,$pool,$reps);
 
 		$GLOBALS['inc']['common']['replace'] = 0;
 		$notFound = [];
@@ -50,7 +71,10 @@
 					$notFound[$kword] = '';
 					continue;
 				}
-				$blob = str_replace($rep,$word,$blob);continue;
+				if( is_array($word) ){unset($reps[$k]);$word = '';continue;}
+				$blob = str_replace($rep,$word,$blob);
+				$blob = common_replaceLogic($blob,$pool,$reps);
+				continue;
 			}
 			if( !$reps ){break;}
 			if($GLOBALS['inc']['common']['replace'] > 20){print_r($notFound);print_r($reps);exit;}
@@ -58,10 +82,10 @@
 
 		return $blob;
 	}
-	function common_renderTemplate($t = false){
+	function common_renderTemplate($t = false,$b = false){
 		$TEMPLATE = &$GLOBALS['TEMPLATE'];
 		$pathTemp = $GLOBALS['inc']['common']['path'].$t.$GLOBALS['inc']['common']['ext'];
-		$pathBase = $GLOBALS['inc']['common']['path'].$GLOBALS['inc']['common']['base'].$GLOBALS['inc']['common']['ext'];
+		$pathBase = $GLOBALS['inc']['common']['path'].($b ? $b : $GLOBALS['inc']['common']['base']).$GLOBALS['inc']['common']['ext'];
 		if($GLOBALS['inc']['common']['ext'] == '.php'){
 			ob_start();include($pathTemp);$TEMPLATE['MAIN'] = ob_get_contents();ob_end_clean();
 			ob_start();include($pathBase);$GLOBALS['inc']['common']['output'] = ob_get_contents();ob_end_clean();
@@ -72,16 +96,25 @@
 
 		$GLOBALS['debug'] = false;
 		/* INI-BLOG_SCRIPT_VARS */
-		if(count($GLOBALS['inc']['common']['js.files'])){$TEMPLATE['PAGE.SCRIPT'] = array_map(function($n){return '<script type="text/javascript" src="'.$n.'"></script>';},$GLOBALS['inc']['common']['js.files']);$TEMPLATE['PAGE.SCRIPT'] = implode(PHP_EOL,$TEMPLATE['PAGE.SCRIPT']);}
-		if(count($GLOBALS['inc']['common']['css.files'])){$TEMPLATE['PAGE.STYLE'] = array_map(function($n){return '<link href="'.$n.'" rel="stylesheet"/>';},$GLOBALS['inc']['common']['css.files']);$TEMPLATE['PAGE.STYLE'] = implode(PHP_EOL,$TEMPLATE['PAGE.STYLE']);}
+		if( count($GLOBALS['inc']['common']['js.files']) ){
+			$TEMPLATE['PAGE.SCRIPT'] = array_map(function($n){
+				if( substr($n['url'],0,4) != 'http' ){$n['url'] = '{%w.indexURL%}'.$n['url'];}
+				return '<script type="text/javascript" src="'.$n['url'].'" '.implode(' ',$n['attr']).'></script>';
+			},$GLOBALS['inc']['common']['js.files']);
+			$TEMPLATE['PAGE.SCRIPT'] = implode(PHP_EOL,$TEMPLATE['PAGE.SCRIPT']);
+		}
+		if( count($GLOBALS['inc']['common']['css.files']) ){
+			$TEMPLATE['PAGE.STYLE'] = array_map(function($n){
+				if( substr($n,0,4) != 'http' ){$n = '{%w.indexURL%}'.$n;}
+				return '<link href="'.$n.'" rel="stylesheet">';
+			},$GLOBALS['inc']['common']['css.files']);$TEMPLATE['PAGE.STYLE'] = implode(PHP_EOL,$TEMPLATE['PAGE.STYLE']);}
 		/* END-BLOG_SCRIPT_VARS */
 		/* INI-META */
 		if(isset($TEMPLATE['META.DESCRIPTION'])){$TEMPLATE['META.DESCRIPTION'] = str_replace('"','\'',$TEMPLATE['META.DESCRIPTION']);}
 		if(isset($TEMPLATE['META.OG.IMAGE'])){$TEMPLATE['META.OG.IMAGE'] = '<meta property="og:image" content="'.$TEMPLATE['META.OG.IMAGE'].'"/>'.PHP_EOL;}
 		/* END-META */
 		$GLOBALS['inc']['common']['output'] = common_replaceInTemplate($GLOBALS['inc']['common']['output'],$TEMPLATE);
-		$GLOBALS['inc']['common']['output'] = preg_replace($GLOBALS['inc']['common']['reg.replacement'],'',$GLOBALS['inc']['common']['output']);
-
+		$GLOBALS['inc']['common']['output'] = preg_replace('/{%[a-zA-Z0-9_\.\-]+%}/','',$GLOBALS['inc']['common']['output']);
 		return $GLOBALS['inc']['common']['output'];
 	}
 	$GLOBALS['COMMON']['SNIPPETCACHE'] = array();
@@ -133,11 +166,11 @@
 		$p = '<ul class="pager">';
 		foreach($arr as $k=>$v){
 			switch($v){
-				case 'pd':$p .= '<li><span>{%prev%}</span></li>';break;
+				case 'pd':$p .= '<li>{%prev%}</li>';break;
 				case 'pe':$p .= '<li><a href="{%url%}'.(($current-1 > 1) ? '{%add%}'.($current-1) : '').'">{%prev%}</a></li>';break;
-				case 'nd':$p .= '<li><span>{%next%}</span></li>';break;
+				case 'nd':$p .= '<li>{%next%}</li>';break;
 				case 'ne':$p .= '<li><a href="{%url%}{%add%}'.($current+1).'">{%next%}</a></li>';break;
-				case 'c':$p .= '<li class="current"><span>'.$k.'</span></li>';break;
+				case 'c':$p .= '<li class="current">'.$k.'</li>';break;
 				default:$p .= '<li><a href="{%url%}'.(($k > 1) ? '{%add%}'.$k : '').'">'.$k.'</a></li>';
 			}
 		}
@@ -146,4 +179,33 @@
 	}
 	/* END-Pager */
 
+	function common_checkbox(&$elems = [],$total = []){
+		$cache = array_fill_keys($elems,1);
+		foreach( $total as &$elem ){
+			$elem = [
+				 'name'=>$elem
+				,'checked'=>isset($cache[$elem]) ? ' checked="checked" ' : ''
+			];
+		}
+		unset($elem);
+		$elems = $total;
+	}
+
+	function common_noPhoto($size = false){
+		$p = $GLOBALS['inc']['common']['photo.path'];
+		$pname = 'no.photo.png';
+		if($size && ($pname = 'no.photo.'.$size.'.png') && !file_exists($p.$pname)){$pname = 'no.photo.png';}
+		$p .= $pname;
+
+		$r = stat($p);
+		$m = date('D, d M Y H:m:s \G\M\T',$r['mtime']);
+		header('Last-Modified: '.$m);
+		header('Cache-Control: max-age=31557600');
+		header_remove('Pragma');
+		if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])){$d = strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']);$k = strtotime($m);if($d == $k){header('HTTP/1.1 304 Not Modified');exit;}}
+
+		header('Content-type: image/png');
+		readfile($p);
+		exit;
+	}
 
