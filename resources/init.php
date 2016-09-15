@@ -11,5 +11,6 @@
 			case '_mongodb':
 				if( class_exists('MongoId') ){include('classes/class._mongo.php');break;}
 				//include('classes/class._mongodb.php');break;
+			case '__strings':include('inc.strings.php');break;
 		}
 	}
