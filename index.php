@@ -9,7 +9,13 @@
 
 	/* INI-Mobile detection */
 	$GLOBALS['w.isMobile'] = false;
-	if(stripos($_SERVER['HTTP_USER_AGENT'],'android') !== false){$GLOBALS['w.isMobile'] = true;}
+	if( isset($_SERVER['HTTP_USER_AGENT']) ){
+		if( stripos($_SERVER['HTTP_USER_AGENT'],'android') !== false ){$GLOBALS['w.isMobile'] = true;}
+		if( stripos($_SERVER['HTTP_USER_AGENT'],'iphone') !== false ){$GLOBALS['w.isMobile'] = true;}
+		if( stripos($_SERVER['HTTP_USER_AGENT'],'Windows NT') !== false ){$GLOBALS['w.isMobile'] = false;}
+		if( stripos($_SERVER['HTTP_USER_AGENT'],'X11; Ubuntu; Linux') !== false ){$GLOBALS['w.isMobile'] = false;}
+		if( stripos($_SERVER['HTTP_USER_AGENT'],'X11; Linux x86_64') !== false ){$GLOBALS['w.isMobile'] = false;}
+	}
 	//FIXME: more cases ...
 	/* END-Mobile detection */
 
@@ -18,10 +24,12 @@
 
 	/* INI-loading resources */
 	if(preg_match('/(css|js|images|fonts)\/.*?\.([a-z]{2,4}$)/',$params,$m)){
-		$m[0] = 'resources/'.$m[0];if(!file_exists($m[0])){exit;}
+		$m[0] = 'resources/'.urldecode($m[0]);if(!file_exists($m[0])){exit;}
 		switch($m[2]){
 			case 'css':header('Content-type: text/css');ob_start('ob_gzhandler');break;
 			case 'js': header('Content-type: application/javascript');ob_start('ob_gzhandler');break;
+			case 'jpg':
+			case 'jpeg':header('Content-type: image/jpeg');break;
 			case 'png':header('Content-type: image/png');break;
 			case 'gif':header('Content-type: image/gif');break;
 			case 'ttf':case 'woff':case 'otf':case 'eot':header('Content-type: application/x-unknown-content-type');break;
@@ -33,6 +41,7 @@
 	/* INI-dispatcher */
 	chdir('resources/libs/');
 	$controllersBase = '../controllers/';
+	include_once('../init.php');
 	do{
 		/* Get pagination if any */
 		$d = 0;while(preg_match('/page\/([0-9]+)$/',$params,$m) && ++$d){
@@ -69,9 +78,7 @@
 	/* END-template */
 
 	$t = microtime(1);
-	include_once('../init.php');
 	$r = call_user_func_array($command,$params);
 	echo $GLOBALS['inc']['common']['output'];
 	$totalTime = microtime(1)-$t;
 	exit;
-

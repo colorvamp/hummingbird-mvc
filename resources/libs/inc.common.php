@@ -8,6 +8,7 @@
 		'js.files'=>array(),
 		'output'=>'',
 		'photo.path'=>'../images/default/'
+		,'page.404'=>'404'
 	);
 	if( ini_get('pcre.backtrack_limit') < 2000000){ini_set('pcre.backtrack_limit','2M');}
 
@@ -15,21 +16,79 @@
 	function common_setBase($base = ''){$GLOBALS['inc']['common']['base'] = $base;}
 	function common_setExt($ext = ''){$GLOBALS['inc']['common']['ext'] = $ext;}
 	function common_loadScript($script = '',$attribs = ['async']){
-		$GLOBALS['inc']['common']['js.files'][] = ['url'=>$script,'attr'=>$attribs];
+		if ( !$script ) { return false; }
+		$index = md5($script);
+		if ( !isset($GLOBALS['inc']['common']['js.files'][$index]) ) { $GLOBALS['inc']['common']['js.files'][$index] = ['url'=>$script,'attr'=>$attribs]; }
 	}
 	function common_loadStyle($style = ''){$GLOBALS['inc']['common']['css.files'][] = $style;}
-	function common_findKword($kword,$pool = false){if($pool == false){$pool = &$GLOBALS;}while(!isset($pool[$kword]) && ($b = strpos($kword,'_'))){$poolName = substr($kword,0,$b);$kword = substr($kword,$b+1);if(!isset($pool[$poolName])){return false;}$pool = &$pool[$poolName];}return (isset($pool[$kword])) ? $pool[$kword] : false;}
+	//function common_findKword($kword,$pool = false){if( $kword === '.' ){return $pool;}if($pool == false){$pool = &$GLOBALS;}while(!isset($pool[$kword]) && ($b = strpos($kword,'_'))){$poolName = substr($kword,0,$b);$kword = substr($kword,$b+1);if(!isset($pool[$poolName])){return false;}$pool = &$pool[$poolName];}return (isset($pool[$kword])) ? $pool[$kword] : false;}
+	function common_findKword2($kword,$pool = false){
+		/* For debug */
+		if( $pool === false ){$pool = &$GLOBALS;}
+		$function = __FUNCTION__;
+
+		if( isset($pool[$kword]) ){return $pool[$kword];}
+		$parts = explode('_',$kword);
+
+		$rest  = [];
+		while( ($pop = array_pop($parts)) !== null ){
+			$rest[] = $pop;
+			$try = implode('_',$parts);
+			if( isset($pool[$try]) ){
+				if( !$rest ){return $pool[$try];}
+				$rest = array_reverse($rest);
+				$rest = implode('_',$rest);
+				return $function($rest,$pool[$try]);
+			}
+		}
+		return false;
+	}
+	function common_findKword($kword,$pool = false){
+		if( $pool === false ){$pool = &$GLOBALS;}
+		$function = __FUNCTION__;
+
+		if( isset($pool[$kword]) ){return $pool[$kword];}
+		$parts = explode('_',$kword);
+		$rest  = [];
+		while( ($pop = array_pop($parts)) !== null ){
+			$rest[] = $pop;
+			$try = implode('_',$parts);
+			if( isset($pool[$try]) ){
+				if( !$rest ){return $pool[$try];}
+				$rest = array_reverse($rest);
+				$rest = implode('_',$rest);
+				return $function($rest,$pool[$try]);
+			}
+		}
+		return false;
+	}
 	function common_resetReplaceIteration(){$GLOBALS['inc']['common']['replace'] = 0;}
+	function common_replaceIncludes($blob){
+		$regexp = '!{%@(?<template>[a-zA-Z0-9_\.\-/]+)%}!sm';
+
+		$GLOBALS['inc']['common']['replace'] = 0;
+		while( preg_match($regexp,$blob,$m) ){
+			$GLOBALS['inc']['common']['replace']++;
+			if($GLOBALS['inc']['common']['replace'] > 20){echo 'max replaces';exit;}
+
+			$blob = preg_replace_callback($regexp,function($m){
+				return common_loadSnippet($m['template']);
+			},$blob);
+		}
+
+		return $blob;
+	}
 	function common_replaceLogic($blob,$pool = false,$reps = false){
 		global $TEMPLATE;
 
 		/* Ahora reemplazamos parte de la lógica */
 		$GLOBALS['inc']['common']['replace'] = 0;
-		while( preg_match('/{%[#\^]([a-zA-Z0-9_\.]+)%}(.*?){%\/\1%}/sm',$blob) ){
+		while( preg_match('/{%[#\^]([a-zA-Z0-9_\.\-]+)%}(.*?){%\/\1%}/sm',$blob) ){
 			$GLOBALS['inc']['common']['replace']++;
 			if($GLOBALS['inc']['common']['replace'] > 20){echo 'max replaces';exit;}
 
-			$blob = preg_replace_callback('!{%(?<operator>[#\^])(?<word>[a-zA-Z0-9_\.]+)%}(?<snippet>.*?){%/\2%}!sm',function($m) use (&$pool,&$TEMPLATE){
+			$blob = preg_replace_callback('!{%(?<operator>[#\^])(?<word>[a-zA-Z0-9_\.\-]+)%}(?<snippet>.*?){%/\2%}!sm',function($m) use (&$pool,&$TEMPLATE){
+				//if( $m['word'] == 'install_steps_config' ){var_dump(common_findKword2($m['word'],$pool));exit;}
 				if( ($word = common_findKword($m['word'],$pool)) === false ){
 					$word = common_findKword($m['word'],$TEMPLATE);
 				}
@@ -57,6 +116,7 @@
 		return $blob;
 	}
 	function common_replaceInTemplate($blob,$pool = false,$reps = false){
+		$blob = common_replaceIncludes($blob);
 		$blob = common_replaceLogic($blob,$pool,$reps);
 
 		$GLOBALS['inc']['common']['replace'] = 0;
@@ -71,8 +131,10 @@
 					$notFound[$kword] = '';
 					continue;
 				}
+				//if( is_array($word) ){unset($reps[$k]);$word = print_r($word,1);}
 				if( is_array($word) ){unset($reps[$k]);$word = '';continue;}
 				$blob = str_replace($rep,$word,$blob);
+				$blob = common_replaceIncludes($blob);
 				$blob = common_replaceLogic($blob,$pool,$reps);
 				continue;
 			}
@@ -132,16 +194,30 @@
 		return $GLOBALS['TEMPLATE']['SNIPPETS'][$sname];
 	}
 	function common_r($hash = '',$code = false){
-		if(!$code){$code = 302;}
-		if(substr($hash,0,4) == 'http'){header('Location: '.$hash,true,$code);exit;}
-		header('Location: http://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'].$hash,true,$code);exit;
+		if ( !$hash && $code == 404 ) { header('HTTP/1.0 404 Not Found');return common_404(); }
+		if ( !$code ) { $code = 302; }
+		if ( substr($hash,0,4) == 'http' ) { header('Location: '.$hash,true,$code); exit; }
+		/* INI-Procesar parámetros GET pasados en $hash;
+		 * sobreescribiraán parámetros del mismo nombre que se hayan recibido por GET en la URL */
+		if ( 0 === strpos($hash, '?') ) {
+			$hash = str_replace('?', '', $hash);
+			foreach ( explode('&', $hash) as $get_param ){
+				list($index, $value) = explode('=', $get_param, 2);
+				$_GET[$index] = $value;
+			}
+		}
+		/* END-Procesar parámetros GET pasados en $hash */
+		$get_params = [];
+		foreach ( $_GET as $index => $value ) { $get_params[] = $index.'='.$value; }
+		$uri_parts = explode('?', $_SERVER['REQUEST_URI'], 2);
+		header('Location: http://'.$_SERVER['SERVER_NAME'].$uri_parts[0].( $get_params ? '?'.implode('&', $get_params) : '' ), true, $code); exit;
 	}
 	/* INI-Pager */
 	function common_pagerByElements($currentPage = 1,$totalElements = 0,$perPage = 10,$buttons = 5){
 		$totalPages = ceil($totalElements/$perPage);
 		return common_pagerByPages($currentPage,$totalPages,$buttons);
 	}
-	function common_pagerByPages($currentPage = 1,$totalPages = 5,$buttons = 5){		
+	function common_pagerByPages($currentPage = 1,$totalPages = 5,$buttons = 5){
 		$currentPage = $lowerLimit = $upperLimit = min($currentPage,$totalPages);
 
 		for($b = 1; $b < $buttons && $b < $totalPages;){
@@ -162,34 +238,23 @@
 	}
 	function common_pagerArrayToHTML($arr,$pool = false){
 		$current = array_search('c',$arr);
+		if( isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] ){$pool['params'] = '?'.$_SERVER['QUERY_STRING'];}
 
 		$p = '<ul class="pager">';
 		foreach($arr as $k=>$v){
 			switch($v){
 				case 'pd':$p .= '<li>{%prev%}</li>';break;
-				case 'pe':$p .= '<li><a href="{%url%}'.(($current-1 > 1) ? '{%add%}'.($current-1) : '').'">{%prev%}</a></li>';break;
+				case 'pe':$p .= '<li><a href="{%url%}'.(($current-1 > 1) ? '{%add%}'.($current-1) : '').'{%params%}">{%prev%}</a></li>';break;
 				case 'nd':$p .= '<li>{%next%}</li>';break;
-				case 'ne':$p .= '<li><a href="{%url%}{%add%}'.($current+1).'">{%next%}</a></li>';break;
+				case 'ne':$p .= '<li><a href="{%url%}{%add%}'.($current+1).'{%params%}">{%next%}</a></li>';break;
 				case 'c':$p .= '<li class="current">'.$k.'</li>';break;
-				default:$p .= '<li><a href="{%url%}'.(($k > 1) ? '{%add%}'.$k : '').'">'.$k.'</a></li>';
+				default:$p .= '<li><a href="{%url%}'.(($k > 1) ? '{%add%}'.$k : '').'{%params%}">'.$k.'</a></li>';
 			}
 		}
 		$p .= '</ul>';
 		return ($pool) ? common_replaceInTemplate($p,$pool) : $p;
 	}
 	/* END-Pager */
-
-	function common_checkbox(&$elems = [],$total = []){
-		$cache = array_fill_keys($elems,1);
-		foreach( $total as &$elem ){
-			$elem = [
-				 'name'=>$elem
-				,'checked'=>isset($cache[$elem]) ? ' checked="checked" ' : ''
-			];
-		}
-		unset($elem);
-		$elems = $total;
-	}
 
 	function common_noPhoto($size = false){
 		$p = $GLOBALS['inc']['common']['photo.path'];
@@ -208,4 +273,7 @@
 		readfile($p);
 		exit;
 	}
-
+	function common_404(){
+		common_setBase('base.empty');
+		echo common_renderTemplate($GLOBALS['inc']['common']['page.404']);exit;
+	}

@@ -23,7 +23,7 @@
 
 	/* INI-Dependencies */
 	if( !class_exists('SQLite3') ){
-		$r = shell_exec('sudo apt-get install php5-sqlite');
+		$r = shell_exec('sudo apt-get install php-sqlite');
 	}
 	/* END-Dependencies */
 
