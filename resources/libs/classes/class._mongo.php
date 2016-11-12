@@ -116,7 +116,8 @@
 			$r = $this->collection_get();
 			if( is_array($r) && isset($r['errorDescription']) ){return false;}
 			try{
-				return $this->collection->findOne(['_id'=>$id]);
+				if( !isset($params['fields']) ){$params['fields'] = [];}
+				return $this->collection->findOne(['_id'=>$id],$params['fields']);
 			}catch(MongoException $e){
 				return false;
 			}
@@ -368,6 +369,16 @@
 			}
 			$params['cursor'] = true;
 			$params['limit']  = false;
+			if( isset($params['order']) && is_string($params['order']) ){
+				$sort = [$params['order']=>1];
+				if(($p = strpos($params['order'],' '))){
+					/* Support for 'ORDER field (ASC|DESC)' */
+					$field = substr($params['order'],0,$p);
+					$o = substr($params['order'],$p+1);
+					$sort = [$field=>($o == 'ASC') ? 1 : -1];
+				}
+				$params['order'] = $sort;
+			}
 			$c = 0;
 
 			try{
@@ -385,6 +396,7 @@
 				}else{
 					$cursor = $this->collection->find($clause);
 					if( isset($params['hint']) ){$cursor->hint($params['hint']);}
+					if( isset($params['order']) ){$cursor->sort($params['order']);}
 					if( isset($params['explain']) && $params['explain'] ){print_r($cursor->explain());exit;}
 					$cursor->timeout(-1);
 					while( ($row = $cursor->getNext()) ){
