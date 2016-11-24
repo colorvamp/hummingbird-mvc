@@ -45,6 +45,8 @@
 		public $search_fields = [];
 		public $pool = 'mongo';
 		public $timeout = 800000;
+		public $typemap = [ 'root' => 'array', 'document' => 'array', 'array' => 'array' ];
+		public $timestamp_diff = false;
 
 		function __construct($table = false,$otable = false){
 			if( $table ){$this->table = $table;}
@@ -163,7 +165,7 @@
 			$c = new MongoDB\Driver\Command($command);
 			try {
 				$r = $this->client->executeCommand($this->db, $c);
-				$r->setTypeMap([ 'root' => 'array', 'document' => 'array', 'array' => 'array' ]);
+				$r->setTypeMap($this->typemap);
 			} catch ( MongoDB\Driver\Exception\Exception $e ) {
 				return ['errorCode'=>$e->getCode(),'errorDescription'=>$e->getMessage(),'file'=>__FILE__,'line'=>__LINE__];
 			}
@@ -181,7 +183,7 @@
 			$c = new MongoDB\Driver\Command($command);
 			try {
 				$r = $this->client->executeCommand( $this->db, $c );
-				$r->setTypeMap([ 'root' => 'array', 'document' => 'array', 'array' => 'array' ]);
+				$r->setTypeMap($this->typemap);
 			} catch ( MongoDB\Driver\Exception\Exception $e ) {
 				return ['errorCode'=>$e->getCode(),'errorDescription'=>$e->getMessage(),'file'=>__FILE__,'line'=>__LINE__];
 			}
@@ -202,7 +204,7 @@
 			try{
 				$q = new MongoDB\Driver\Query(['_id'=>$id], ['limit' => 1]);
 				$r = $this->client->executeQuery($this->db.'.'.$this->table, $q);
-				$r->setTypeMap([ 'root' => 'array', 'document' => 'array', 'array' => 'array' ]);
+				$r->setTypeMap($this->typemap);
 			}catch(MongoDB\Driver\Exception\Exception $e){
 				return false;
 			}
@@ -268,7 +270,7 @@
 				$this->_clause($clause);
 				$q = new MongoDB\Driver\Query($clause, $options);
 				$r = $this->client->executeQuery($this->db.'.'.$this->table, $q);
-				$r->setTypeMap([ 'root' => 'array', 'document' => 'array', 'array' => 'array' ]);
+				$r->setTypeMap($this->typemap);
 			} catch(MongoDB\Driver\Exception\Exception $e) {
 				return ['errorCode'=>$e->getCode(),'errorDescription'=>$e->getMessage(),'file'=>__FILE__,'line'=>__LINE__];
 			}
@@ -348,7 +350,7 @@
 			try {
 				$c = new MongoDB\Driver\Command($command);
 				$r = $this->client->executeCommand($this->db, $c);
-				$r->setTypeMap([ 'root' => 'array', 'document' => 'array', 'array' => 'array' ]);
+				$r->setTypeMap($this->typemap);
 			} catch ( MongoDB\Driver\Exception\Exception $e ) {
 				return ['errorCode'=>$e->getCode(),'errorDescription'=>$e->getMessage(),'file'=>__FILE__,'line'=>__LINE__];
 			}
@@ -391,7 +393,7 @@
 			$c = new MongoDB\Driver\Command($command);
 			try {
 				$r = $this->client->executeCommand($this->db, $c);
-				$r->setTypeMap([ 'root' => 'array', 'document' => 'array', 'array' => 'array' ]);
+				$r->setTypeMap($this->typemap);
 				$rs = current($r->toArray());
 				/* Porque puede ser NULL e isset fallaría */
 				if( array_key_exists('value',$rs) ){$this->_row($rs['value']);$rs = $rs['value'];}
@@ -415,7 +417,7 @@
 			try {
 				$c = new MongoDB\Driver\Command($command);
 				$r = $this->client->executeCommand($this->db, $c);
-				$r->setTypeMap([ 'root' => 'array', 'document' => 'array', 'array' => 'array' ]);
+				$r->setTypeMap($this->typemap);
 			} catch ( MongoDB\Driver\Exception\Exception $e ) {
 				return ['errorCode'=>$e->getCode(),'errorDescription'=>$e->getMessage(),'file'=>__FILE__,'line'=>__LINE__];
 			}
@@ -559,7 +561,7 @@
 			try {
 				$query = new MongoDB\Driver\Query($clause);
 				$r = $this->client->executeQuery($this->db.'.'.$this->table, $query);
-				$r->setTypeMap([ 'root' => 'array', 'document' => 'array', 'array' => 'array' ]);
+				$r->setTypeMap($this->typemap);
 			} catch(MongoDB\Driver\Exception\Exception $e) {
 				return ['errorCode'=>$e->getCode(),'errorDescription'=>$e->getMessage(),'file'=>__FILE__,'line'=>__LINE__];
 			}
@@ -593,7 +595,37 @@
 			else{$rows = $result;}
 			return $rows;
 		}
+		function ps(){
+			$r = $this->client_get();
+			if ( is_array($r) && isset($r['errorDescription']) ) { return $r; }
 
+			try{
+				if( $this->server == 'db' ){$command = new \MongoDB\Driver\Command(['eval'=>'db.currentOP();']);}
+				else{$command = new MongoDB\Driver\Command(['currentOp'=>true]);}
+				$r = $this->client->executeCommand('admin',$command);
+				$r->setTypeMap($this->typemap);
+			} catch ( MongoDB\Driver\Exception\Exception $e ) {
+				return [ 'errorCode' => $e->getCode(), 'errorDescription' => $e->getMessage(), 'file'=>__FILE__, 'line'=>__LINE__ ];
+			}
+
+			$r = iterator_to_array($r);
+			return isset($r[0]['retval']['inprog']) ? $r[0]['retval']['inprog'] : $r[0]['inprog'];
+		}
+		function psKill($id = false){
+			$r = $this->client_get();
+			if ( is_array($r) && isset($r['errorDescription']) ) { return $r; }
+
+			try{
+				if( $this->server == 'db' ){$command = new \MongoDB\Driver\Command(['eval'=>'db.killOp('.intval($id).');']);}
+				else{$command = new MongoDB\Driver\Command(['killOp'=>true,'op'=>intval($id)]);}
+				$r = $this->client->executeCommand('admin',$command);
+				$r->setTypeMap($this->typemap);
+			} catch ( MongoDB\Driver\Exception\Exception $e ) {
+				return [ 'errorCode' => $e->getCode(), 'errorDescription' => $e->getMessage(), 'file'=>__FILE__, 'line'=>__LINE__ ];
+			}
+
+			return iterator_to_array($r);
+		}
 		protected function _generate_index_name($document){
 			if ( is_object($document) ) { $document = get_object_vars($document); }
 			if ( ! is_array($document) ) { throw InvalidArgumentException::invalidType('$document', $document, 'array or object'); }
