@@ -462,22 +462,18 @@
 		function _iterator($clause = [],$callback = false,$params = []){
 			$r = $this->collection_get();
 			if( is_array($r) && isset($r['errorDescription']) ){return $r;}
-
 			if( !$callback || !is_callable($callback) ){return ['errorDescription'=>'NO_CALLBACK','file'=>__FILE__,'line'=>__LINE__];}
 
 			$bar = function_exists('cli_pbar') && isset($params['bar']) ? 'cli_pbar' : false;
+			if( $bar ){$total = $this->count($clause);}
 
-			$total = $this->count($clause);
-
-			$params['cursor'] = true;
-			$params['limit']  = false;
 			$c = 0;
-
 			try{
+				$this->_clause($clause);
 				if( isset($params['iterator.type']) && $params['iterator.type'] == 'where' ){
 					$skip  = 0;  if( isset($params['skip']) ){$skip = $params['skip'];}
 					$chunk = 2000;if( isset($params['chunk']) ){$chunk = $params['chunk'];}
-					while($objectOBs = $this->getWhere($clause,['limit'=>$skip.','.$chunk,'order'=>'_id ASC'])){
+					while($objectOBs = $this->getWhere($clause,['limit'=>$skip.','.$chunk])){
 						$skip += $chunk;
 						foreach($objectOBs as $objectOB){
 							$c++;
@@ -486,15 +482,31 @@
 						}
 					}
 				}else{
+					$options = [];
+					$params['cursor'] = true;
+					$params['limit']  = false;
+					if ( isset($params['order']) && is_string($params['order']) ){
+						$sort = [$params['order']=>1];
+						if(($p = strpos($params['order'],' '))){
+							/* Support for 'ORDER field (ASC|DESC)' */
+							$field = substr($params['order'],0,$p);
+							$o = substr($params['order'],$p+1);
+							$sort = [$field=>($o == 'ASC') ? 1 : -1];
+						}
+						$options['sort'] = $sort;
+					}
+					if ( isset($params['fields']) ) { $options['projection'] = array_fill_keys($params['fields'], 1); }
+
 					try {
-						$query = new MongoDB\Driver\Query($clause);
-						$r = $this->client->executeQuery($this->db.'.'.$this->table, $query);
-						$r->setTypeMap([ 'root' => 'array', 'document' => 'array', 'array' => 'array' ]);
+						$query = new MongoDB\Driver\Query($clause,$options);
+						$r = $this->client->executeQuery($this->db.'.'.$this->table,$query);
+						$r->setTypeMap($this->typemap);
 					} catch(MongoDB\Driver\Exception\Exception $e) {
 						return ['errorCode'=>$e->getCode(),'errorDescription'=>$e->getMessage(),'file'=>__FILE__,'line'=>__LINE__];
 					}
 					foreach ($r as $row ){
 						$c++;if( $bar ){$bar($c,$total,$size=30);}
+						$this->_row($row);
 						$result = $callback($row, $this->client);
 						if( $result === 'break' ){break;}
 					}
