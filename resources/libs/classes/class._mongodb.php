@@ -201,8 +201,10 @@
 			}
 			$r = $this->collection_get();
 			if( is_array($r) && isset($r['errorDescription']) ){return false;}
+			$options = ['limit' => 1];
+			if ( isset($params['fields']) ) { $options['projection'] = array_fill_keys($params['fields'], 1); }
 			try{
-				$q = new MongoDB\Driver\Query(['_id'=>$id], ['limit' => 1]);
+				$q = new MongoDB\Driver\Query(['_id'=>$id], $options);
 				$r = $this->client->executeQuery($this->db.'.'.$this->table, $q);
 				$r->setTypeMap($this->typemap);
 			}catch(MongoDB\Driver\Exception\Exception $e){
