@@ -8,6 +8,8 @@
 			$str = html_entity_decode($str);
 			$str = strip_tags($str);
 			$str = preg_replace('/[ \n\r\t]+/',' ',$str);
+			/* Eliminamos los enlaces de markdown */
+			$str = preg_replace('!\[([^\]]+)\]\([^\)]+\)!','$1',$str);
 			if($lenth && mb_strlen($str) > $lenth){
 				$str = mb_substr($str,0,$lenth);
 				if( ($char = substr($str,-1)) && (ord($char) == 195/* Ã */ || ord($char) == 194/* � */) ){$str = substr($str,0,-1);}
@@ -35,6 +37,8 @@
 		$str = html_entity_decode($str,ENT_QUOTES);
 		$str = strip_tags($str);
 		$str = preg_replace('/[ \n\r\t]+/',' ',$str);
+		/* Eliminamos los enlaces de markdown */
+		$str = preg_replace('!\[([^\]]+)\]\([^\)]+\)!','$1',$str);
 		if($lenth && mb_strlen($str) > $lenth){
 			$str = mb_substr($str,0,$lenth);
 			if( ($char = substr($str,-1)) && (ord($char) == 195/* Ã */ || ord($char) == 194/* � */) ){$str = substr($str,0,-1);}
