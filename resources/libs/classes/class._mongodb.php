@@ -27,6 +27,11 @@
 			}
 			function __call($method, $args) { return $this->_object_id->$method($args); }
 			function __toString() { return $this->{'$id'};}
+			function getTimestamp(){
+				$time = hexdec(substr($this->{'$id'},0,8));
+				//echo $time;exit;
+				return $time;
+			}
 		}
 	}
 
@@ -47,6 +52,7 @@
 		public $timeout = 800000;
 		public $typemap = [ 'root' => 'array', 'document' => 'array', 'array' => 'array' ];
 		public $timestamp_diff = false;
+		public $retry   = 0;
 
 		function __construct($table = false,$otable = false){
 			if( $table ){$this->table = $table;}
@@ -95,7 +101,7 @@
 							 ,'name' => $this->_generate_index_name($index['fields'])
 						]]
 					];
-					if( isset($index['props']) && is_array($index['props']) ) { $command['indexes'][0] += $index['props']; }
+					if( isset($index['props']) && is_array($index['props']) ) { $command['indexes'][0] = $index['props'] + $command['indexes'][0]; }
 					try{
 						$c = new MongoDB\Driver\Command($command);
 						$this->client->executeCommand($this->db, $c);
@@ -118,6 +124,33 @@
 			}
 			return true;
 		}
+		function timestamp() {
+			if( $this->timestamp_diff !== false ){
+				/* Si la petición está cacheada simplemente resolvemos en base a la diferencia
+				 * que cacheamos inicialmente */
+				return time() - $this->timestamp_diff;
+			}
+
+			$r = $this->client_get();
+			if ( is_array($r) && isset($r['errorDescription']) ) { return $r; }
+
+			try{
+				$r = $this->client->executeCommand( $this->db, new MongoDB\Driver\Command(['hostInfo' => 1]) );
+				$r->setTypeMap($this->typemap);
+			} catch ( MongoDB\Driver\Exception\Exception $e ) {
+				return [ 'errorCode' => $e->getCode(), 'errorDescription' => $e->getMessage(), 'file'=>__FILE__, 'line'=>__LINE__ ];
+			}
+			$r = current($r->toArray());
+			/* Keep an eye on this. With the older PHP MongoDB extension, the Datetime objects are wrongly created */
+			if ( !($datetime = $r['system']['currentTime']->toDateTime()) ) {
+				 return [ 'errorDescription' => 'TIMESTAMP_ERROR', 'file' => __FILE__, 'line' => __LINE__ ];
+			}
+			$datetime->setTimeZone(new DateTimeZone('Europe/Madrid'));
+			$timestamp = $datetime->getTimestamp();
+			$this->timestamp_diff = time() - $timestamp;
+
+			return $timestamp;
+		}
 		function count($clause = [],$params = []){return $this->_count($clause,$params);}
 		function distinct($field = '',$clause = [],$params = []){return $this->_distinct($field,$clause,$params);}
 		function getByID($id = false,$params = []){return $this->_getByID($id,$params);}
@@ -126,6 +159,7 @@
 		function getWhere($clause = [],$params = []){return $this->_getWhere($clause,$params);}
 		function removeWhere($clause = [],$params = []){return $this->_removeWhere($clause,$params);}
 		function removeByID($id = false,$params = []){return $this->_removeByID($id,$params);}
+		function removeByIDs($ids = false,$params = []){return $this->_removeByIDs($ids,$params);}
 		function updateWhere($clause = false,$data = [],$params = []){return $this->_updateWhere($clause,$data,$params);}
 		function aggregate($plan = [],$params = []){return $this->_aggregate($plan,$params);}
 		function findAndModify($query = [],$update = [],$fields = [],$options = []){return $this->_findAndModify($query,$update,$fields,$options);}
@@ -158,8 +192,11 @@
 				$this->_clause($clause);
 				$command['query'] = $clause;
 			}
-			foreach (['hint', 'limit', 'maxTimeMS', 'skip'] as $option) {
-				if ( isset($params[$option]) ) { $command[$option] = (int)$params[$option]; }
+			// Query index hinting; using "old style" method until a proper mode is
+			// implemented in the MongoDB PHP driver (https://github.com/mongodb/mongo-php-library/issues/232)
+			if ( !empty($params['hint']) ) { $command['modifiers'] = [ '$hint' => $params['hint'] ]; }
+			foreach (['limit', 'maxTimeMS', 'skip'] as $option) {
+				if ( !empty($params[$option]) ) { $command[$option] = (int)$params[$option]; }
 			}
 
 			$c = new MongoDB\Driver\Command($command);
@@ -207,8 +244,14 @@
 				$q = new MongoDB\Driver\Query(['_id'=>$id], $options);
 				$r = $this->client->executeQuery($this->db.'.'.$this->table, $q);
 				$r->setTypeMap($this->typemap);
+				$this->retry = 0;
 			}catch(MongoDB\Driver\Exception\Exception $e){
-				return false;
+				$errorDescription = $e->getMessage();
+				if( strpos($errorDescription,'Failure during socket delivery: Broken pipe') && !$this->retry ){
+					$this->retry++;
+					return $this->_getByID($id,$params);
+				}
+				return ['errorCode'=>$e->getCode(),'errorDescription'=>$e->getMessage(),'file'=>__FILE__,'line'=>__LINE__];
 			}
 			$r = current($r->toArray());
 			$this->_row($r);
@@ -241,35 +284,69 @@
 		function _getWhere($clause = [],$params = []){
 			$r = $this->collection_get();
 			if( is_array($r) && isset($r['errorDescription']) ){return $r;}
+
+			/* INI - $params normalization */
 			if( !isset($params['indexBy']) ){$params['indexBy'] = '_id';}
+			if ( !empty($params['limit']) && is_string($params['limit']) ) {
+				$limit = $params['limit'];
+				if ( strpos($params['limit'], ',') ) {
+					list($skip, $limit) = explode(',', $params['limit']);
+					$params['skip'] = (int)$skip;
+				}
+				$params['limit'] = (int)$limit;
+			}
+			if ( !empty($params['order']) ) { $params['sort'] = $params['order']; unset($params['order']); }
+			if ( !empty($params['sort']) && is_string($params['sort']) ){
+				$sort = [$params['sort'] => 1];
+				if ( ($p = strpos($params['sort'], ' ')) ) {
+					/* Support for 'ORDER field (ASC|DESC)' */
+					$field = substr($params['sort'], 0, $p);
+					$o = substr($params['sort'], $p + 1);
+					$sort = [$field => ($o == 'ASC') ? 1 : -1];
+				}
+				$params['sort'] = $sort;
+			}
+			if ( !empty($params['fields']) ) {$params['projection'] = $params['fields']; unset($params['fields']); }
+			if ( !empty($params['projection']) ){
+				$tmp = [];
+				foreach( $params['projection'] as $p=>$v ){
+					if( is_string($v) && $v !== '1' ){$tmp[$v] = 1;continue;}
+					$tmp[$p] = $v;
+				}
+				$params['projection'] = $tmp;
+			}
+			/* END - $params normalization */
+
 			$options = [
 				 'batchSize' => 100
 				,'limit' => 2000
 			];
-			if( isset($params['limit']) && $params['limit'] ){
-				$limit = $params['limit'];
-				if ( strpos($params['limit'], ',') ) {
-					list($skip, $limit) = explode(',',$params['limit']);
-					$options['skip'] = (int)$skip;
-				}
-				$options['limit'] = (int)$limit;
-			}
-			if ( isset($params['fields']) ) { $options['projection'] = array_fill_keys($params['fields'], 1); }
-			foreach (['hint', 'maxTimeMS'] as $option) {
-				if ( !empty($params[$option]) ) { $options[$option] = (int)$params[$option]; }
-			}
-			if( isset($params['order']) && is_string($params['order']) ){
-				$sort = [$params['order']=>1];
-				if(($p = strpos($params['order'],' '))){
-					/* Support for 'ORDER field (ASC|DESC)' */
-					$field = substr($params['order'],0,$p);
-					$o = substr($params['order'],$p+1);
-					$sort = [$field=>($o == 'ASC') ? 1 : -1];
-				}
-				$options['sort'] = $sort;
-			}
+			if ( !empty($params['limit']) ) { $options['limit'] = $params['limit']; }
+			if ( !empty($params['skip']) ) { $options['skip'] = $params['skip']; }
+			// Query index hinting; using "old style" method until a proper mode is
+			// implemented in the MongoDB PHP driver (https://github.com/mongodb/mongo-php-library/issues/232)
+			if ( !empty($params['hint']) ) { $options['modifiers'] = [ '$hint' => $params['hint'] ]; }
+			if ( !empty($params['projection']) ) { $options['projection'] = $params['projection']; }
+			if ( !empty($params['maxTimeMS']) ) { $options['maxTimeMS'] = (int)$params['maxTimeMS']; }
+			if ( !empty($params['sort']) ) { $options['sort'] = $params['sort']; }
+
 			try {
 				$this->_clause($clause);
+				if( !empty($params['explain']) ){
+					$command['explain'] = [
+						 'find'=>$this->table
+						,'filter'=>$clause
+					];
+					if ( !empty($params['hint']) ) { $command['explain']['hint'] = $options['modifiers']['$hint']; }
+					if ( isset($options['projection']) ) { $command['explain']['projection'] = $options['projection']; }
+					if ( isset($options['maxTimeMS']) ) { $command['explain']['MaxTimeMS'] = $options['maxTimeMS']; }
+					if ( isset($options['sort']) ) { $command['explain']['sort'] = $options['sort']; }
+					if ( isset($options['limit']) ) { $command['explain']['limit'] = $options['limit']; }
+					$c = new MongoDB\Driver\Command($command);
+					$r = $this->client->executeCommand($this->db,$c);
+					$r->setTypeMap($this->typemap);
+					return current($r->toArray());
+				}
 				$q = new MongoDB\Driver\Query($clause, $options);
 				$r = $this->client->executeQuery($this->db.'.'.$this->table, $q);
 				$r->setTypeMap($this->typemap);
@@ -312,22 +389,27 @@
 		}
 		function _removeByID($id = false,$params = []){
 			if( is_object($id) && get_class($id) == 'MongoId' ){$id = strval($id);}
-			if( isset($id) && is_string($id) && strlen($id) == 24 && preg_match('!^[a-zA-Z0-9]+$!',$id) ){
-				try {
-					$id = new MongoDB\BSON\ObjectID($id);
-				}catch(MongoDB\Driver\Exception\Exception $e){
-					return false;
-				}
-			}
-			return $this->_removeWhere(['_id'=>$id], ['limit'=>1]);
+			if( is_string($id) && strlen($id) == 24 && preg_match('!^[a-zA-Z0-9]+$!',$id) ){$id = new MongoId($id);}
+			return $this->_removeWhere(['_id'=>$id],['limit'=>1]);
+		}
+		function _removeByIDs($ids = [],$params = []){
+			$ids = array_filter($ids);
+			$ids = array_map(function($id){
+				if( is_string($id) && strlen($id) == 24 && (preg_match('!^[a-zA-Z0-9]+$!',$id)) ){$id = new MongoId($id);}
+				return $id;
+			},$ids);
+			$ids = array_values($ids);
+			$clause = ['_id'=>['$in'=>$ids]];
+			return $this->_removeWhere($clause,$params);
 		}
 		function _updateWhere($clause = [],$data = [],$params = []){
 			$r = $this->collection_get();
 			if( is_array($r) && isset($r['errorDescription']) ){return $r;}
 
-			if( !isset($data['$set']) || !isset($data['$inc']) ){ $data = ['$set'=>$data]; }
+			if( !isset($data['$set']) && !isset($data['$inc']) ){ $data = ['$set'=>$data]; }
 
 			try {
+				$this->_clause($clause);
 				$bulk = new MongoDB\Driver\BulkWrite([ 'ordered' => true ]);
 				$bulk->update($clause, $data, ['multi'=>true]);
 				$r = $this->client->executeBulkWrite($this->db.'.'.$this->table, $bulk);
@@ -429,13 +511,17 @@
 		function _save(&$data = [],$params = []){
 			/* INI-Remove invalid params */
 			if( isset($GLOBALS['api']['mongo']['tables'][$this->table]) ){
-				foreach($data as $k=>$v){if( !isset($GLOBALS['api']['mongo']['tables'][$this->table][$k]) ){unset($data[$k]);}}
+				foreach( $data as $k=>$v ){
+					if( $k[0] == '$' ){continue;}
+					if( !isset($GLOBALS['api']['mongo']['tables'][$this->table][$k]) ){unset($data[$k]);}
+				}
 			}
 			/* END-Remove invalid params */
 
 			$oldData = [];
 			if ( !isset($params['update.disabled']) && isset($data['_id']) && !($oldData = $this->_getByID($data['_id'],$params)) ){ $oldData = []; }
-			$data = $data+$oldData;
+			if ( isset($oldData['errorDescription']) ){ return $oldData; }
+			$data = $data + $oldData;
 
 			if( !isset($data['_id']) ){$data['_id'] = new MongoId();}
 			if( isset($data['_id']) && is_string($data['_id']) && strlen($data['_id']) == 24 && preg_match('!^[a-zA-Z0-9]+$!',$data['_id']) ){$data['_id'] = new MongoId($data['_id']);}
@@ -449,13 +535,39 @@
 
 			$r = $this->collection_get();
 			if( is_array($r) && isset($r['errorDescription']) ){return $r;}
+			$clause = [ '_id' => $data['_id'] ];
+
+			/* INI-Si hay operadores de update movemos el resto */
+			if( isset($data['$inc']) ){
+				$tmp  = [];
+				$keys = array_keys($data);
+				$keys = array_diff($keys,['_id','$inc']);
+				foreach( $keys as $key ){
+					$tmp['$set'][$key] = $data[$key];
+				}
+				unset($data['_id']);
+
+				$unset = [];
+				foreach( $data['$inc'] as $line=>$inc ){
+					$pre = explode('.',$line);
+					$pre = reset($pre);
+					if( isset($tmp['$set'][$pre]) ){unset($tmp['$set'][$pre]);}
+				}
+
+				$tmp['$inc'] = $data['$inc'];
+				$data = $tmp;
+				unset($pre);
+				unset($tmp);
+			}
+			/* END-Si hay operadores de update movemos el resto */
 
 			try {
 				$bulk = new MongoDB\Driver\BulkWrite(['ordered' => true]);
-				$bulk->update([ '_id' => $data['_id'] ], $data, [ 'multi' => false, 'upsert' => true ]);
+				$bulk->update($clause, $data, [ 'multi' => false, 'upsert' => true ]);
 				$r = $this->client->executeBulkWrite($this->db.'.'.$this->table, $bulk);
 			} catch ( MongoDB\Driver\Exception\Exception $e ) {
-				return ['errorCode'=>$e->getCode(),'errorDescription'=>$e->getMessage(),'file'=>__FILE__,'line'=>__LINE__];
+				$data = ['errorCode'=>$e->getCode(),'errorDescription'=>$e->getMessage(),'file'=>__FILE__,'line'=>__LINE__];
+				return $data;
 			}
 
 			$this->_row($data);
@@ -471,13 +583,19 @@
 			$bar = function_exists('cli_pbar') && isset($params['bar']) ? 'cli_pbar' : false;
 			if( $bar ){$total = $this->count($clause);}
 
+			$params['cursor'] = true;
+			$params['limit']  = false;
 			$c = 0;
 			try{
 				$this->_clause($clause);
 				if( isset($params['iterator.type']) && $params['iterator.type'] == 'where' ){
 					$skip  = 0;  if( isset($params['skip']) ){$skip = $params['skip'];}
 					$chunk = 2000;if( isset($params['chunk']) ){$chunk = $params['chunk'];}
-					while($objectOBs = $this->getWhere($clause,['limit'=>$skip.','.$chunk])){
+					$options['limit'] = $skip.','.$chunk;
+					// Query index hinting; using "old style" method until a proper mode is
+					// implemented in the MongoDB PHP driver (https://github.com/mongodb/mongo-php-library/issues/232)
+					if ( !empty($params['hint']) ) { $options['modifiers'] = [ '$hint' => $params['hint'] ]; }
+					while($objectOBs = $this->getWhere($clause,$options)){
 						$skip += $chunk;
 						foreach($objectOBs as $objectOB){
 							$c++;
