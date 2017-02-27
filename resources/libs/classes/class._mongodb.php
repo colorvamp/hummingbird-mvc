@@ -194,15 +194,23 @@
 			}
 			// Query index hinting; using "old style" method until a proper mode is
 			// implemented in the MongoDB PHP driver (https://github.com/mongodb/mongo-php-library/issues/232)
-			if ( !empty($params['hint']) ) { $command['modifiers'] = [ '$hint' => $params['hint'] ]; }
+			if ( !empty($params['hint']) ) { $command['hint'] = $params['hint']; }
 			foreach (['limit', 'maxTimeMS', 'skip'] as $option) {
 				if ( !empty($params[$option]) ) { $command[$option] = (int)$params[$option]; }
+			}
+
+			if ( !empty($params['explain']) ) {
+				if( isset($command['query']) ){$clause = $command['query'];}
+				$command = ['explain'=>['count'=>$this->table]];
+				if( $clause ){$command['explain']['query'] = $clause;}
+				if ( !empty($params['hint']) ) { $command['explain']['hint'] = $params['hint']; }
 			}
 
 			$c = new MongoDB\Driver\Command($command);
 			try {
 				$r = $this->client->executeCommand($this->db, $c);
 				$r->setTypeMap($this->typemap);
+				if ( !empty($params['explain']) ) {return current($r->toArray());}
 			} catch ( MongoDB\Driver\Exception\Exception $e ) {
 				return ['errorCode'=>$e->getCode(),'errorDescription'=>$e->getMessage(),'file'=>__FILE__,'line'=>__LINE__];
 			}
