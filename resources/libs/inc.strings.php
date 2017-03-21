@@ -2,6 +2,12 @@
 	trait __strings{
 		public $chars_specials = ['á','é','í','ó','ú','Á','É','Í','Ó','Ú','ñ','Ñ','ä','ë','ï','ö','ü','Ä','Ë','Ï','Ö','Ü'];
 		public $chars_normal   = ['a','e','i','o','u','a','e','i','o','u','n','n','a','e','i','o','u','a','e','i','o','u'];
+		function strings_fix($str = ''){
+			return str_replace($this->chars_specials,$this->chars_normal,strtolower($str));
+		}
+		function strings_toURL($str){
+			return preg_replace(['/[ |\.|_]/','/[^a-zA-Z0-9\-]*/','(^\-|[\-]*$)','/[\-]{2,}/'],['-','','','-'],$this->strings_fix($str));
+		}
 		function strings_clean($str = '',$lenth = false){
 			$str = str_replace([PHP_EOL,'</p><p>'],[' ',' '],$str);
 			$str = str_replace(['&nbsp;','<br>','<br/>'],' ',$str);
