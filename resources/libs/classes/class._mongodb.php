@@ -563,6 +563,7 @@
 				}
 
 				$tmp['$inc'] = $data['$inc'];
+				if( empty($tmp['$set']) ){unset($tmp['$set']);}
 				$data = $tmp;
 				unset($pre);
 				unset($tmp);
