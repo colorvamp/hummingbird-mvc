@@ -413,6 +413,7 @@
 		function _updateWhere($clause = [],$data = [],$params = []){
 			$r = $this->collection_get();
 			if( is_array($r) && isset($r['errorDescription']) ){return $r;}
+			$this->_clause($clause);
 
 			if( !isset($data['$set']) && !isset($data['$inc']) ){ $data = ['$set'=>$data]; }
 
@@ -422,7 +423,7 @@
 				$bulk->update($clause, $data, ['multi'=>true]);
 				$r = $this->client->executeBulkWrite($this->db.'.'.$this->table, $bulk);
 			} catch ( MongoDB\Driver\Exception\Exception $e ) {
-				return false;
+				return ['errorCode'=>$e->getCode(),'errorDescription'=>$e->getMessage(),'file'=>__FILE__,'line'=>__LINE__];
 			}
 			return $r->getModifiedCount();
 		}
