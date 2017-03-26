@@ -27,16 +27,18 @@
 		/* END-Checking modes */
 
 		/* INI-Painting the shouts */
-		$shoutOBs = shoutbox_getWhere('shoutResponseTo = 0');
-		$TEMPLATE['html.thread'] = '';
-		foreach($shoutOBs as $shoutOB){
-			$shoutOB['html.shoutDiff'] = date_humanReadable($shoutOB['shoutStamp']);
-			$TEMPLATE['html.thread'] .= common_loadSnippet('snippets/shout.node',$shoutOB);
+		if( class_exists('SQLite3') ){
+			$shoutOBs = shoutbox_getWhere('shoutResponseTo = 0');
+			$TEMPLATE['html.thread'] = '';
+			foreach($shoutOBs as $shoutOB){
+				$shoutOB['html.shoutDiff'] = date_humanReadable($shoutOB['shoutStamp']);
+				$TEMPLATE['html.thread'] .= common_loadSnippet('snippets/shout.node',$shoutOB);
+			}
 		}
 		/* END-Painting the shouts */
 
 
-		$TEMPLATE['BLOG.TITLE'] = 'colorvamp.com';
+		$TEMPLATE['PAGE.TITLE'] = 'colorvamp.com';
 		return common_renderTemplate('index');
 	}
 
