@@ -42,6 +42,8 @@
 					case preg_match('!failed to open stream: Connection refused!',$error): return ['errorDescription'=>'CONNECTION_REFUSED','file'=>__FILE__,'line'=>__LINE__];
 					case preg_match('!failed to open stream: Cannot connect to HTTPS server through proxy!',$error): return ['errorDescription'=>'PROXY_ERROR','file'=>__FILE__,'line'=>__LINE__];
 					case preg_match('!failed to open stream: HTTP request failed\!!',$error): return ['errorDescription'=>'REQUEST_FAILED','file'=>__FILE__,'line'=>__LINE__];
+					case preg_match('!failed to open stream: Connection timed out!',$error): return ['errorDescription'=>'TIME_OUT','file'=>__FILE__,'line'=>__LINE__];
+					case preg_match('!failed to open stream: No route to host!',$error): return ['errorDescription'=>'NO_ROUTE_TO_HOST','file'=>__FILE__,'line'=>__LINE__];
 					default: return ['errorDescription'=>$error,'file'=>__FILE__,'line'=>__LINE__];
 				}
 			}
