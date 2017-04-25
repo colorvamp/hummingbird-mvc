@@ -17,6 +17,7 @@
 		this.range = document.createElement('INPUT');
 		this.range.setAttribute('type','range');
 		this.range.setAttribute('max',100);
+		if( this.input.value ){this.range.setAttribute('value',this.input.value);}
 
 		this.progress.setAttribute('max',this.range.max);
 		this.widget.appendChild(this.progress);
