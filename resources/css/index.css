@@ -126,7 +126,7 @@ input[type="text"]:focus,input[type="password"]:focus{border:1px solid #cd5728;b
 .widget-list input[type="radio"]{display:none;}
 /* END-widget-list */
 /* INI-widget-vote */
-.widget-vote{position:relative;}
+.widget-vote{position:relative;height:20px;}
 .widget-vote progress{display:inline-block;position:absolute;height:7px;border:0;width:100%;font-size:0;margin-top:2px;}
 .widget-vote progress::-moz-progress-bar{border-radius:5px/50%;height:100%;background:#f2ae43;}
 .widget-vote progress[value="0"]::-moz-progress-bar{border:0;}
