@@ -23,6 +23,7 @@
 		this.widget.appendChild(this.range);
 
 		this.progress.value = this.range.value;
+		this.input.value = this.range.value;
 
 		this.range.addEventListener('input',function(e){
 			ths.progress.value = this.value;
