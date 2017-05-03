@@ -18,6 +18,24 @@
 			$opts['http']['request_fulluri'] = true;
 			$opts['http']['ignore_errors']   = true;
 			$opts['http']['follow_location'] = false;
+			
+			if( !empty($params['header']) ){
+				/* Normalize headers */
+				foreach( $params['header'] as $key=>$value ){
+					$lower = strtolower($key);
+					if( $lower == $key ){continue;}
+					$params['header'][$lower] = $value;
+					unset($params['header'][$key]);
+				}
+			}
+
+			if( empty($params['header']['cookie']) && !empty($this->cookies) ){
+				/* Recover cookies */
+				$params['header']['cookie'] = array_map(function($c){
+					return $c['name'].'='.$c['value'].';';
+				},$this->cookies);
+				$params['header']['cookie'] = implode(' ',$params['header']['cookie']);
+			}
 
 			if( isset($params['post']) ){
 				$opts['http']['method'] = 'POST';
@@ -59,8 +77,27 @@
 				$return['page-code'] = $m['code'];
 				$return['page-message'] = $m['msg'];
 			}
-			if( preg_match('!location: (?<url>.*)!i',$return['page-header'],$m) ){
+			if( preg_match('![Ll]ocation: (?<url>.*)!i',$return['page-header'],$m) ){
 				$return['page-next'] = trim($m['url']);
+			}
+			if( preg_match_all('![Ss]et-[Cc]ookie: (?<cookie>.*)!',$return['page-header'],$m) ){
+				/* Processing cookies */
+				foreach( $m[0] as $k=>$dummy ){
+					$cookie = [];
+					$r = preg_match_all('!(?<key>[a-zA-Z0-9\-_\.]*)=(?<value>[^;]*)!i',$m['cookie'][$k],$c);
+					if( ($p = array_search('path',$c['key'])) !== false ){
+						$cookie['path'] = $c['value'][$p];
+						unset($c['key'][$p],$c['value'][$p]);
+					}
+					if( ($p = array_search('domain',$c['key'])) !== false ){
+						$cookie['domain'] = $c['value'][$p];
+						unset($c['key'][$p],$c['value'][$p]);
+					}
+					$cookie['name']  = reset($c['key']);
+					$cookie['value'] = reset($c['value']);
+					$this->cookies[$cookie['name']] = $cookie;
+					$return['page-cookies'][$cookie['name']] = $cookie;
+				}
 			}
 			return $return;
 		}
