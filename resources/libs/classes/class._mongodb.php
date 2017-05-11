@@ -631,6 +631,7 @@
 						$options['sort'] = $sort;
 					}
 					if ( isset($params['fields']) ) { $options['projection'] = array_fill_keys($params['fields'], 1); }
+					if ( !empty($params['hint']) ) { $options['modifiers'] = [ '$hint' => $params['hint'] ]; }
 
 					try {
 						$query = new MongoDB\Driver\Query($clause,$options);
