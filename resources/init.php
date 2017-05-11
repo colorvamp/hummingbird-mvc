@@ -16,5 +16,6 @@
 			case '__strings':	include('inc.strings.php');break;
 			case  '_date':
 			case '__date':		include('classes/class._date.php');break;
+			case  '_params':	include('classes/class._params.php');break;
 		}
 	}
