@@ -415,10 +415,13 @@
 			if( is_array($r) && isset($r['errorDescription']) ){return $r;}
 			$this->_clause($clause);
 
-			if( !isset($data['$set']) && !isset($data['$inc']) ){ $data = ['$set'=>$data]; }
+			if( !isset($data['$set'])
+			 && !isset($data['$inc'])
+			 && !isset($data['$pull']) ){ $data = ['$set'=>$data]; }
 
 			try {
 				$this->_clause($clause);
+				$this->_clause($data);
 				$bulk = new MongoDB\Driver\BulkWrite([ 'ordered' => true ]);
 				$bulk->update($clause, $data, ['multi'=>true]);
 				$r = $this->client->executeBulkWrite($this->db.'.'.$this->table, $bulk);
