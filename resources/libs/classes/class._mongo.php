@@ -247,7 +247,9 @@
 			$r = $this->collection_get();
 			if( is_array($r) && isset($r['errorDescription']) ){return $r;}
 
-			if( !isset($data['$set']) || !isset($data['$inc']) ){
+			if( !isset($data['$set'])
+			 && !isset($data['$inc'])
+			 && !isset($data['$pull']) ){
 				$data = ['$set'=>$data];
 			}
 
