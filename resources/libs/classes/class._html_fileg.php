@@ -69,6 +69,7 @@
 			$return = [
 				 'page-code'=>0
 				,'page-message'=>''
+				,'page-current'=>$url
 				,'page-next'=>false
 				,'page-header'=>implode("\r\n",$http_response_header)
 				,'page-content'=>$html
