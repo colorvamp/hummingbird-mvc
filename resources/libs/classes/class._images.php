@@ -116,7 +116,6 @@
 			return new _path($this->storage,$prefix,$imageOB['_id']);
 		}
 		function blob_get(&$imageOB = [],$size = 'orig',$mime = 'jpeg',$params = []){
-			include_once('inc.path.php');
 			$_valid_mime      = ['jpeg'=>0,'png'=>0,'gif'=>0];
 			$_default_quality = ['jpeg'=>90,'png'=>90,'gif'=>false];
 			if( !isset($imageOB['_id']) ){return false;}
@@ -130,7 +129,6 @@
 			$path = $folder.$size.'.'.intval($quality).'.'.$mime;
 
 			if( !file_exists($path) ){
-				include_once('inc.images.php');
 				$files = glob($folder.'orig.*');
 				//FIXME: decidir prioridades mejor
 				$orig  = current($files);
