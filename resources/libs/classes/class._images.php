@@ -1,5 +1,5 @@
 <?php
-	trait _images{
+	trait __images{
 		function image_mimeDecider($mime,$path){
 			if( !function_exists('imagecreatefromjpeg') ){echo 'No está instalada la libreria php5_gd';exit;}
 			switch($mime){
@@ -74,8 +74,8 @@
 		}
 	}
 
-	class _storage_images{
-		use _images;
+	class _images_storage{
+		use __images;
 		public $storage = '../db/static.images/';
 		function __construct(){
 
