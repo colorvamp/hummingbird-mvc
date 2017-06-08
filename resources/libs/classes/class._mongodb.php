@@ -220,6 +220,7 @@
 		function _distinct($field = '',$clause = [],$params = []){
 			$r = $this->collection_get();
 			if( is_array($r) && isset($r['errorDescription']) ) { return $r; }
+			$this->_clause($clause);
 
 			$command = [ 'distinct' => $this->table, 'key' => $field ];
 			if ( $clause ) { $command['query'] = $clause; }
