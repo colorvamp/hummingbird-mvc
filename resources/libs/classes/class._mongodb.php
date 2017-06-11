@@ -247,8 +247,20 @@
 			}
 			$r = $this->collection_get();
 			if( is_array($r) && isset($r['errorDescription']) ){return false;}
+
+			if ( !empty($params['fields']) ) {$params['projection'] = $params['fields']; unset($params['fields']); }
+			if ( !empty($params['projection']) ){
+				$tmp = [];
+				foreach( $params['projection'] as $p=>$v ){
+					if( is_string($v) && $v !== '1' ){$tmp[$v] = 1;continue;}
+					$tmp[$p] = $v;
+				}
+				$params['projection'] = $tmp;
+			}
+
 			$options = ['limit' => 1];
-			if ( isset($params['fields']) ) { $options['projection'] = array_fill_keys($params['fields'], 1); }
+			if ( !empty($params['projection']) ) { $options['projection'] = $params['projection']; }
+			
 			try{
 				$q = new MongoDB\Driver\Query(['_id'=>$id], $options);
 				$r = $this->client->executeQuery($this->db.'.'.$this->table, $q);
