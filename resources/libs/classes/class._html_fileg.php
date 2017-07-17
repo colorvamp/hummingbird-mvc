@@ -38,9 +38,26 @@
 			}
 
 			if( isset($params['post']) ){
-				$opts['http']['method'] = 'POST';
-				$opts['http']['content'] = http_build_query($params['post']);
-				$opts['http']['header']['content-type'] = 'application/x-www-form-urlencoded';
+				if( is_array($params['post']) ){
+					$params['post'] = http_build_query($params['post']);
+					$opts['http']['header']['content-type'] = 'application/x-www-form-urlencoded';
+				}
+				$opts['http']['header']['content-length'] = strlen($params['post']);
+				$opts['http']['method']  = 'POST';
+				$opts['http']['content'] = $params['post'];
+			}
+			if( isset($params['put']) ){
+				if( is_array($params['put']) ){
+					$params['put'] = http_build_query($params['put']);
+					$opts['http']['header']['content-type'] = 'application/x-www-form-urlencoded';
+				}
+				if( json_decode($params['put']) ){
+					/* Detect a valid json string for raw body */
+					$opts['http']['header']['content-type'] = 'application/json';
+				}
+				$opts['http']['header']['content-length'] = strlen($params['put']);
+				$opts['http']['method']  = 'PUT';
+				$opts['http']['content'] = $params['put'];
 			}
 			if( isset($params['header']) ){$opts['http']['header'] += $params['header'];}
 
