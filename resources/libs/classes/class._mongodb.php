@@ -500,8 +500,8 @@
 				$command['sort'] = $sort;
 			}
 
-			$c = new MongoDB\Driver\Command($command);
 			try {
+				$c = new MongoDB\Driver\Command($command);
 				$r = $this->client->executeCommand($this->db, $c);
 				$r->setTypeMap($this->typemap);
 				$rs = current($r->toArray());
