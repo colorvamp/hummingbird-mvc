@@ -430,7 +430,8 @@
 
 			if( !isset($data['$set'])
 			 && !isset($data['$inc'])
-			 && !isset($data['$pull']) ){ $data = ['$set'=>$data]; }
+			 && !isset($data['$pull'])
+			 && !isset($data['$unset']) ){ $data = ['$set'=>$data]; }
 
 			try {
 				$this->_clause($clause);
