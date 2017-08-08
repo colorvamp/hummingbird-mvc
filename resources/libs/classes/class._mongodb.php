@@ -645,8 +645,16 @@
 						}
 						$options['sort'] = $sort;
 					}
-					if ( isset($params['fields']) ) { $options['projection'] = array_fill_keys($params['fields'], 1); }
-					if ( !empty($params['hint']) ) { $options['modifiers'] = [ '$hint' => $params['hint'] ]; }
+					if ( isset($params['hint']) ) { $options['hint'] = $params['hint']; }
+					if ( !empty($params['fields']) ) {$params['projection'] = $params['fields']; unset($params['fields']); }
+					if ( !empty($params['projection']) ){
+						$tmp = [];
+						foreach( $params['projection'] as $p=>$v ){
+							if( is_string($v) && $v !== '1' ){$tmp[$v] = 1;continue;}
+							$tmp[$p] = $v;
+						}
+						$options['projection'] = $tmp;
+					}
 
 					try {
 						$query = new MongoDB\Driver\Query($clause,$options);
