@@ -24,37 +24,59 @@
 			$items = 0;
 
 			/* Progress bar support */
-			$bar = function_exists('cli_pbar') && isset($params['bar']) ? 'cli_pbar' : false;
+			$bar = function_exists('cli_pbar') && !empty($params['bar']) ? 'cli_pbar' : false;
 			if( $bar ){$total = filesize($this->file);}
 
 			while( !feof($this->fp) ){
 				$chunk = fread($this->fp,6144);
 				$len   = strlen($chunk);
-				$ready = false;
+				$cur   = 0;
+				$read  = false;
+				$item  = false;
 				for( $i = 0; $i < $len; $i++ ){
-					if( $this->level_array >= $target_array && $this->level_object >= $target_object ){$ready = true;}
-					if( $this->level_array < $target_array && $this->level_object < $target_object ){$ready = false;}
-					if( $ready ){
+					if( !$read && $this->level_array >= $target_array && $this->level_object >= $target_object ){$read = true;}
+					if(  $read && $this->level_array < $target_array && $this->level_object < $target_object ){
+						$read = false;
+					}
+					if(  $read ){
 						$this->current .= $chunk[$i];
+						$cur++;
 					}
 					if( $chunk[$i] == '[' ){$this->level_array++;continue;}
-					if( $chunk[$i] == ']' ){$this->level_array--;continue;}
+					if( $chunk[$i] == ']' ){$this->level_array--;$item = true;}
 
 					if( $chunk[$i] == '{' ){$this->level_object++;continue;}
-					if( $chunk[$i] == '}' ){$this->level_object--;continue;}
+					if( $chunk[$i] == '}' ){$this->level_object--;$item = true;}
 
-					if( $ready && $this->level_array == $target_array && $this->level_object == $target_object ){
-						if( substr($this->current,-1) == ',' ){$this->current = substr($this->current,0,-1);}
+					if( $item && $this->level_array == $target_array && $this->level_object == $target_object ){
+						$key = false;
+						if( $this->current[0] == ',' ){
+							$this->current = substr($this->current,1);
+							$cur--;
+						}
+						if( substr($this->current,-1) == ',' ){
+							$this->current = substr($this->current,0,-1);
+							$cur--;
+						}
+						if( preg_match('!^"[^"]+":!',$this->current,$m) ){
+							$key = substr($m[0],1,-2);
+							$this->current = substr($this->current,strlen($m[0]));
+						}
+						if( !$cur ){continue;}
 						if( !($this->current = json_decode($this->current,true)) ){
 							return ['errorDescription'=>'DECODE_FAILED','file'=>__FILE__,'line'=>__LINE__];
 						}
-						$callback($this->current);
+						$callback($this->current,$key);
 						$this->current = '';
+						$cur   = 0;
+						$read = false;
 						$items++;
 					}
+
+					$item = false;
 				}
 				$this->pointer += $len;
-				if( $items = 0 && $this->pointer > $this->maxbytes ){
+				if( $items == 0 && $this->pointer > $this->maxbytes ){
 					/* if the base item is not found and maxbytes is reached
 					 * then exit before memory limit */
 					return ['errorDescription'=>'MAXBYTES_ERROR','file'=>__FILE__,'line'=>__LINE__];
