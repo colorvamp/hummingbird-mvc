@@ -6,13 +6,9 @@ a{color:#7f99ca;text-decoration:none;}
 a:hover{color:#8cb8e8;border-bottom:0;}
 ul{list-style:none;}
 
-body > .wrapper{width:1000px;margin:auto;}
-
-.header{margin-bottom:20px;}
-.header a img{margin:20px 0;}
-.body{font-size:0;}
-.body > .wrapper{width:700px;}
-.body > .side{width:300px;}
+body > * > .container{width:1000px;margin:auto;}
+body > header{background:linear-gradient(to top,#dddddd 0,#dddddd .9px,#fafbfc 1px);}
+body > main{padding-top:20px;}
 
 /* INI-node */
 .node{}
@@ -123,11 +119,29 @@ input[type="text"]:focus,input[type="password"]:focus{border:1px solid #cd5728;b
 .dropdown-menu p + .btn-group{margin-top:8px;}
 /* END-dropdown */
 /* INI-tabs */
-.tabs{position:relative;font-size:0;border-bottom:1px solid #ddd;}
-.tabs .tab{display:inline-block;position:relative;top:1px;padding:9px 4px 8px 4px;font-size:13px;border-top-left-radius:4px;border-top-right-radius:4px;cursor:pointer;}
-.tabs .tab.active{background:white;padding:9px 14px 8px 14px;border:1px solid #ddd;border-bottom:1px solid white;color:#333;}
-.tabs .tab + .tab{margin-left:12px;}
+.tabs{position:relative;font-size:0;/*border-bottom:1px solid #ddd;*/}
+.tabs::before{position:absolute;bottom:0;width:100%;border-bottom:1px solid #ddd;content:"";}
+.tabs .tab{display:inline-block;position:relative;font-size:13px;cursor:pointer;}
+.tabs .tab > a,
+.tabs .tab > .label{display:block;padding:9px 4px 8px 4px;margin:0;}
+.tabs .tab.active{background:white;border:1px solid #ddd;border-bottom:0;color:#333;border-top:0;}
+.tabs .tab.active::before{position:absolute;border-top:2px solid #ff6e1f;width:calc(100% + 2px);content:"";top:-2px;left:-1px;}
+.tabs .tab.active > a,.tabs .tab.active > .label{padding:9px 14px 8px 14px;}
+.tabs .tab + .tab{margin-left:8px;}
+.tabs .tab > .label > span > .label{padding-top:0;padding-bottom:0;}
 .tabs + .wrapper{margin-top:20px;}
+.tabs + section{border-top:0px;}
+.tabs + .two-column > .column > section:first-child{border-top:0px;}
+.tabs .tab.disabled{color:#ccc;cursor:not-allowed;}
+.widget-tabs{}
+.widget-tabs ul.tabs{white-space:nowrap;max-width:100%;}
+.widget-tabs ul.tabs > .tab{}
+.widget-tabs .tabs-content{}
+.widget-tabs .tabs-content > div{display:none;}
+.widget-tabs .tabs-content > div > div.textarea > textarea{max-width:100%;width:100%;min-height:250px;}
+.widget-tabs .tabs-content > div.active{display:block;padding:6px;background:white;border:1px solid #ddd;border-top:0;}
+.widget-tabs .tabs-content > div.active > h4{margin-top:6px;}
+.widget-tabs + .btn-group{margin-top:10px;}
 /* END-tabs */
 
 /* INI-widget-list */

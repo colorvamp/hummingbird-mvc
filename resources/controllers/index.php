@@ -1,4 +1,6 @@
 <?php
+	$TEMPLATE['main.section.conversation'] = true;
+
 	function index_main($param = false){
 		$TEMPLATE = &$GLOBALS['TEMPLATE'];
 		include_once('api.shoutbox.php');

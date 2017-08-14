@@ -15,18 +15,27 @@
 	{%/JS.WIDGETS%}
 </head>
 <body>
-	<div class="wrapper">
-		<div class="header">
+	<header>
+		<div class="container">
 			<a href="{%w.indexURL%}"><img src="{%w.indexURL%}/r/images/logo.png" alt="ColorVamp" title="ColorVamp"/></a>
 			<h1><a href="{%w.indexURL%}">{%HTML.TITLE%}</a></h1>
 			<h6>{%HTML.DESCRIPTION%}</h6>
+			<ul class="tabs">
+				<li class="tab {%#main.section.conversation%}active{%/main.section.conversation%}"><span class="label"><i class="fa fa-comments" aria-hidden="true"></i> Conversation</span></li>
+				<li class="tab {%#main.section.widgets%}active{%/main.section.widgets%}"><a class="label" href="{%w.indexURL%}/widgets"><i class="fa fa-puzzle-piece" aria-hidden="true"></i> Widgets</a></li>
+				<li class="tab"><span class="label">Options</span></li>
+			</ul>
 		</div>
-		<div class="body">
+	</header>
+	<main>
+		<div class="container">
 			{%MAIN%}
 		</div>
-		<div class="footer">
-			
+	</main>
+	<footer>
+		<div class="container">
+
 		</div>
-	</div>
+	</footer>
 </body>
 </html>

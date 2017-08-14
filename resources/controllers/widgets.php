@@ -1,4 +1,6 @@
 <?php
+	$TEMPLATE['main.section.widgets'] = true;
+
 	function widgets_main(){
 		global $TEMPLATE;
 

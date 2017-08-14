@@ -1,8 +1,3 @@
-	<ul class="tabs">
-		<li class="tab active"><i class="fa fa-comments"></i> Conversation</li>
-		<li class="tab">Preview</li>
-		<li class="tab">Options</li>
-	</ul>
 	<div class="wrapper">
 		{%permission.warning%}
 		{%html.thread%}
@@ -14,9 +9,9 @@
 			<div class="wrapper">
 				<div class="block-header">
 					<ul class="tabs">
-						<li class="tab active">Write</li>
-						<li class="tab">Preview</li>
-						<li class="tab">Options</li>
+						<li class="tab active"><span class="label">Write</span></li>
+						<li class="tab"><span class="label">Preview</span></li>
+						<li class="tab"><span class="label">Options</span></li>
 					</ul>
 				</div>
 				<div class="block-content">
