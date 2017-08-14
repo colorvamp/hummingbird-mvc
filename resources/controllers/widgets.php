@@ -14,3 +14,11 @@
 		return common_renderTemplate('widgets/list');
 	}
 
+	function widgets_scroll(){
+		global $TEMPLATE;
+
+		$TEMPLATE['JS.WIDGETS'] = true;
+		$TEMPLATE['PAGE.TITLE'] = 'widgets - list';
+		return common_renderTemplate('widgets/scroll');
+	}
+

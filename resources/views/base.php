@@ -11,6 +11,7 @@
 	<link href="{%w.indexURL%}/r/css/font-awesome.min.css" rel="stylesheet"/>
 	{%#JS.WIDGETS%}
 	<script type="text/javascript" src="{%w.indexURL%}/r/js/widgets/widget.list.js"></script>
+	<script type="text/javascript" src="{%w.indexURL%}/r/js/widgets/widget.scroll.js"></script>
 	{%/JS.WIDGETS%}
 </head>
 <body>
