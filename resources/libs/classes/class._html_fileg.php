@@ -59,7 +59,7 @@
 				$opts['http']['method']  = 'PUT';
 				$opts['http']['content'] = $params['put'];
 			}
-			if( isset($params['header']) ){$opts['http']['header'] += $params['header'];}
+			if( isset($params['header']) ){$opts['http']['header'] = $params['header'] + $opts['http']['header'];}
 
 			if( $this->proxy ){
 				$auth = base64_encode($this->proxy['user'].':'.$this->proxy['pass']);
