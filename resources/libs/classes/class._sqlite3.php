@@ -15,12 +15,12 @@
 		public $otable   = 'hummingbird';
 		public $client   = false;
 		public $password = false;
+		public $useCache = false;
 		public $indexBy  = '_id';
 		function __construct($params = []){
-			$this->file_path = realpath($this->db);
-			$this->file_sum  = md5($this->file_path);
-
-			
+			$this->file_path  = realpath($this->db);
+			$this->file_sum   = md5($this->file_path);
+			$this->path_cache = $GLOBALS['api']['sqlite3']['dir.cache'].$this->file_sum.'/'.md5($this->table).'/';
 		}
 		function instance($mode = 'r'){
 			if( $this->client ){return true;}
@@ -37,9 +37,10 @@
 				if( $r === false ){return false;}
 				chmod($this->db,0777);
 			}
-			$this->file_path = realpath($this->db);
-			$this->file_sum  = md5($this->file_path);
-			$this->file_name = basename($this->file_path);
+			$this->file_path  = realpath($this->db);
+			$this->file_sum   = md5($this->file_path);
+			$this->file_name  = basename($this->file_path);
+			$this->path_cache = $GLOBALS['api']['sqlite3']['dir.cache'].$this->file_sum.'/'.md5($this->table).'/';
 
 			try{
 				$this->client = new SQLite3($this->file_path,$mode,$this->password);
@@ -163,6 +164,7 @@
 			return $query;
 		}
 		function _close(&$db = false,$shouldCommit = false){
+			//FIXME: no creo que funcione
 			if($shouldCommit){$r = sqlite3_exec('COMMIT;',$db);$GLOBALS['DB_LAST_QUERY_ERRNO'] = $db->lastErrorCode();$GLOBALS['DB_LAST_QUERY_ERROR'] = $db->lastErrorMsg();}
 			$sqliteOB = sqlite3_get($db);
 			/* Si la base de datos estaba abierta, liberamos el lock, pero solo si este proceso es quien ha registrado este lock ($checkpid = true) */
@@ -171,25 +173,35 @@
 			$db = false;
 			return $shouldCommit ? $r : true;
 		}
-		function _getSingle($tableName = false,$whereClause = false,$params = []){
-			if(!isset($params['indexBy'])){$params['indexBy'] = 'id';}
-			$shouldClose = false;if(!isset($params['db']) || !$params['db']){sqlite3_open( $params ,6, (isset($params['db.password']) ? $params['db.password'] : false) );$shouldClose = true;}
-			$selectString = '*';if(isset($params['selectString'])){$selectString = $params['selectString'];}
-			$GLOBALS['DB_LAST_QUERY'] = 'SELECT '.$selectString.' FROM ['.$tableName.'] '.(($whereClause !== false) ? 'WHERE '.$whereClause : '');
-			if(isset($params['group'])){$GLOBALS['DB_LAST_QUERY'] .= ' GROUP BY '.$params['db']->escapeString($params['group']);}
-			if(isset($params['order'])){$GLOBALS['DB_LAST_QUERY'] .= ' ORDER BY '.$params['db']->escapeString($params['order']);}
-			if(isset($params['limit'])){$GLOBALS['DB_LAST_QUERY'] .= ' LIMIT '.$params['db']->escapeString($params['limit']);}
-			$row = sqlite3_querySingle($GLOBALS['DB_LAST_QUERY'],$params['db']);
-			if( isset($params['db.encrypt']) ){sqlite3_rowDecrypt($row,$params);}
-			$GLOBALS['DB_LAST_QUERY_ERRNO'] = $params['db']->lastErrorCode();
-			$GLOBALS['DB_LAST_QUERY_ERROR'] = $params['db']->lastErrorMsg();
-			if($shouldClose){sqlite3_close($params['db']);}
-			return $row;
+		function _getByID($id = false,$params = []){
+			/* Get element by the table id */
+			$key = $this->indexBy ? $this->indexBy : '_id';
+			$clause = [$key=>$id];
+
+			return $this->getSingle($clause,$params);
+		}
+		function _getByIDs($ids = [],$params = []){
+			/* Get elements by multiple table ids */
+			$ids = array_filter($ids);
+			$ids = array_unique($ids);
+			$ids = array_values($ids);
+			if( !$ids ){return [];}
+			$key = $this->indexBy ? $this->indexBy : '_id';
+			$clause = [$key=>['$in'=>$ids]];
+
+			return $this->getWhere($clause,$params);
+		}
+		function _getSingle($clause = false,$params = []){
+			/* Return a single element matching the clause */
+			return $this->_getWhere($clause,['limit'=>1] + $params);
 		}
 		function _getWhere($clause = false,$params = []){
+			/* Return multiple elements matching the clause */
 			if( !($r = $this->instance()) ){return false;}
+			if( is_array($clause) ){
+				$clause = $this->_clause($clause);
+			}
 
-			$clause = $this->_clause($clause);
 			$fields = '*';
 			//FIXME: hacer fields
 			$this->db_last_query = 'SELECT '.$fields.' FROM ['.$this->table.'] '.( $clause ? 'WHERE '.$clause : '');
@@ -197,14 +209,17 @@
 			if( !empty($params['order']) ){$this->db_last_query .= ' ORDER BY '.$this->client->escapeString($params['order']);}
 			if( !empty($params['limit']) ){$this->db_last_query .= ' LIMIT '.$this->client->escapeString($params['limit']);}
 
-			if( false && $GLOBALS['api']['sqlite3']['use.cache'] && ($rows = sqlite3_cache_get($params['db'],$tableName,$GLOBALS['DB_LAST_QUERY']))){
-				//FIXME: más adelante
-				if( isset($params['db.encrypt']) ){sqlite3_rowsDecrypt($rows,$params);}
-				if($shouldClose){sqlite3_close($params['db']);}
+			if( $this->useCache && ($rows = $this->_cache_get($this->db_last_query)) !== false ){
+				/* If cache is available, return cached data */
+				//if( isset($params['db.encrypt']) ){sqlite3_rowsDecrypt($rows,$params);}
 				return $rows;
 			}
 
-			$r = $this->client->query($this->db_last_query);
+			if( !empty($params['limit']) && $params['limit'] == 1 ){
+				$r = $this->client->querySingle($this->db_last_query);
+			}else{
+				$r = $this->client->query($this->db_last_query);
+			}
 			$rows = [];
 
 			if( !isset($params['indexBy']) && isset($this->indexBy) ){$params['indexBy'] = $this->indexBy;}
@@ -214,11 +229,32 @@
 			if( $r && $params['indexBy'] === false ){
 				while( $row = $r->fetchArray(SQLITE3_ASSOC) ){$rows[] = $row;}
 			}
-			//if($GLOBALS['api']['sqlite3']['use.cache']){sqlite3_cache_set($params['db'],$tableName,$GLOBALS['DB_LAST_QUERY'],$rows);}
+
+			/* If cache is enabled save this to cache */
+			if( $this->useCache ){$this->_cache_set($this->db_last_query,$rows);}
 
 			//if( isset($params['db.encrypt']) ){sqlite3_rowsDecrypt($rows,$params);}
 
 			return $rows;
+		}
+		function _removeWhere($clause = false,$params = []){
+			if( !($r = $this->instance('w')) ){return false;}
+			if( is_array($clause) ){
+				$clause = $this->_clause($clause);
+			}
+			if( !$clause ){
+				echo 'No te olvides de poner el where en el delete from!!'.PHP_EOL;exit;
+			}
+
+			$this->db_last_query = 'DELETE FROM `'.$this->table.'` WHERE '.$clause.';';
+
+			$r = $this->client->exec($this->db_last_query);
+			return $r;
+		}
+		function _removeByID($id = false,$params = []){
+			$key = $this->indexBy ? $this->indexBy : 'id';
+			$clause = [$key=>$id];
+			return $this->removeWhere($clause,$params);
 		}
 		function _save(&$data = [],$params = []){
 			if( !($r = $this->instance('w')) ){return false;}
@@ -232,15 +268,13 @@
 			/* END-Remove invalid params */
 
 			if( !isset($params['indexBy']) && isset($this->indexBy) ){$params['indexBy'] = $this->indexBy;}
-			if( false ){
-				//FIXME: 
+			$oldData = [];
+			if( empty($params['update.disabled'])
+			 && isset($data[$params['indexBy']])
+			 && !($oldData = $this->_getByID($data[$params['indexBy']],$params)) ){
 				$oldData = [];
-				if( isset($data[$params['indexBy']]) && !($oldData = $this->_getByID($data[$params['indexBy']],$params)) ){
-					$oldData = [];
-				}
 			}
 
-			//$data = array_replace_recursive($oldData,$data);
 			$data = $data + $oldData;
 
 			/* INI-validations */
@@ -291,6 +325,9 @@
 			if( ($id = $this->client->lastInsertRowID()) ){
 				$data[$params['indexBy']] = $id;
 			}
+
+			/* Remove inconsistent cache if necesary */
+			if( $this->useCache ){$this->_cache_destroy();}
 			$this->log($data,$oldData);
 
 			return true;
@@ -323,11 +360,46 @@
 			$q = $this->client->exec($this->db_last_query);
 			if( $q === false ){return $this->_r(__FILE__,__LINE__);}
 
-			//FIXME: dejamos los indexes para luego
+			$this->_cache_destroy();
+			//FIXME: dejamos los indices para luego
 			//if(isset($GLOBALS['indexes'][$tableName])){$r = sqlite3_createIndex($tableName,$GLOBALS['indexes'][$tableName],$params['db']);if(isset($r['errorDescription'])){if($shouldClose){sqlite3_close($params['db']);}return $r;}}
 			//if(($tableName != $aTableName) && isset($GLOBALS['indexes'][$aTableName])){$r = sqlite3_createIndex($tableName,$GLOBALS['indexes'][$aTableName],$params['db']);if(isset($r['errorDescription'])){if($shouldClose){sqlite3_close($params['db']);}return $r;}}
 				
 			return true;
+		}
+		function _cache_set($query = '',$data = ''){
+			if( !file_exists($this->path_cache) ){$oldmask = umask(0);$r = mkdir($this->path_cache,0777,1);umask($oldmask);}
+			$file_cache = $this->path_cache.md5($query);
+			$r = file_put_contents($file_cache,json_encode($data));
+			return true;
+		}
+		function _cache_get($query = ''){
+			$file_cache = $this->path_cache.md5($query);
+			if( !file_exists($file_cache) ){return false;}
+			return json_decode(file_get_contents($file_cache),true);
+		}
+		function _cache_destroy($query = ''){
+			$file_cache = $this->path_cache;
+			if( $query ){$file_cache .= md5($query);}
+			if( !file_exists($cachePath) ){return false;}
+			$this->_rm($cachePath);
+			return true;
+		}
+		function _rm($path = ''){
+			/* Helper for remove a path recursively */
+			if( !is_dir($path) ){unlink($path);}
+			if( $handle = opendir($path) ){
+				while( false !== ($file = readdir($handle)) ){
+					if( in_array($file,['.','..']) ){continue;}
+					if( is_dir($path.$file) ){
+						$this->_rm($path.$file.'/');
+						continue;
+					}
+					unlink($path.$file);
+				}
+				closedir($handle);
+			}
+			rmdir($path);
 		}
 		function _r($file = __FILE__,$line = __LINE__){
 			return [

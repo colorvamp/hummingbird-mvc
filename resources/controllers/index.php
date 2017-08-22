@@ -2,11 +2,11 @@
 	$TEMPLATE['main.section.conversation'] = true;
 
 	function index_main($param = false){
-		$TEMPLATE = &$GLOBALS['TEMPLATE'];
+		global $TEMPLATE;
 		include_once('api.shoutbox.php');
 		include_once('inc.date.php');
 
-		if(isset($_POST['subcommand'])){switch($_POST['subcommand']){
+		if( isset($_POST['subcommand']) ){switch( $_POST['subcommand'] ){
 			case 'comment.add':
 				$shout = array(
 					'shoutText'=>$_POST['shoutText'],
