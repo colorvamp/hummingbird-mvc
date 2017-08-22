@@ -15,7 +15,7 @@
 		public $otable   = 'hummingbird';
 		public $client   = false;
 		public $password = false;
-		public $useCache = false;
+		public $useCache = true;
 		public $indexBy  = '_id';
 		function __construct($params = []){
 			$this->file_path  = realpath($this->db);
@@ -173,6 +173,15 @@
 			$db = false;
 			return $shouldCommit ? $r : true;
 		}
+		function _count($clause = false,$params = []){
+			if( !isset($params['indexBy']) ){$params['indexBy'] = false;}
+			$params['fields'] = ['count(*) as count'];
+
+			$r = $this->getWhere($clause,$params);
+			if( isset($r['errorDescription']) ){return $r;}
+			$count = reset($r);
+			return $count['count'];
+		}
 		function _getByID($id = false,$params = []){
 			/* Get element by the table id */
 			$key = $this->indexBy ? $this->indexBy : '_id';
@@ -192,8 +201,10 @@
 			return $this->getWhere($clause,$params);
 		}
 		function _getSingle($clause = false,$params = []){
-			/* Return a single element matching the clause */
-			return $this->_getWhere($clause,['limit'=>1] + $params);
+			$params['limit']   = 1;
+			$params['indexBy'] = false;
+			$r = $this->getWhere($clause,$params);
+			return $r ? reset($r) : $r;
 		}
 		function _getWhere($clause = false,$params = []){
 			/* Return multiple elements matching the clause */
@@ -203,7 +214,10 @@
 			}
 
 			$fields = '*';
-			//FIXME: hacer fields
+			if( !empty($params['fields']) ){
+				if( is_array($params['fields']) ){$params['fields'] = implode(',',$params['fields']);}
+				$fields = $params['fields'];
+			}
 			$this->db_last_query = 'SELECT '.$fields.' FROM ['.$this->table.'] '.( $clause ? 'WHERE '.$clause : '');
 			if( !empty($params['group']) ){$this->db_last_query .= ' GROUP BY '.$this->client->escapeString($params['group']);}
 			if( !empty($params['order']) ){$this->db_last_query .= ' ORDER BY '.$this->client->escapeString($params['order']);}
@@ -215,11 +229,7 @@
 				return $rows;
 			}
 
-			if( !empty($params['limit']) && $params['limit'] == 1 ){
-				$r = $this->client->querySingle($this->db_last_query);
-			}else{
-				$r = $this->client->query($this->db_last_query);
-			}
+			$r = $this->client->query($this->db_last_query);
 			$rows = [];
 
 			if( !isset($params['indexBy']) && isset($this->indexBy) ){$params['indexBy'] = $this->indexBy;}
@@ -381,8 +391,8 @@
 		function _cache_destroy($query = ''){
 			$file_cache = $this->path_cache;
 			if( $query ){$file_cache .= md5($query);}
-			if( !file_exists($cachePath) ){return false;}
-			$this->_rm($cachePath);
+			if( !file_exists($file_cache) ){return false;}
+			$this->_rm($file_cache);
 			return true;
 		}
 		function _rm($path = ''){
