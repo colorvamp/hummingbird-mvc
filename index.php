@@ -1,7 +1,8 @@
 <?php
 	error_reporting(E_STRICT | E_ALL);
 	$GLOBALS['w.localhost'] = $_SERVER['SERVER_NAME'] == 'localhost';
-	if(substr($_SERVER['SERVER_NAME'],0,7) == '192.168' || $_SERVER['SERVER_ADDR'] == '127.0.0.1'){$GLOBALS['w.localhost'] = true;}
+	if( substr($_SERVER['SERVER_NAME'],0,7) == '192.168'
+	 || (!empty($_SERVER['SERVER_ADDR']) && $_SERVER['SERVER_ADDR'] == '127.0.0.1') ){$GLOBALS['w.localhost'] = true;}
 
 	$GLOBALS['w.indexURL'] = 'http://'.$_SERVER['SERVER_NAME'];
 	$GLOBALS['w.currentURL'] = 'http://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
