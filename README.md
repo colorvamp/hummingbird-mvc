@@ -6,6 +6,13 @@ lightweight dispatcher of about 60 lines of code. The controllers are builds upo
 static functions to avoid class initialization penalties at large scale but trying
 to keep as much cleanness and structuration as possible.
 
+Init
+----
+Before any controller, the file 'resources/init.php' will be loaded, here is located 
+the autoloader (using __autoload instead of spl\_autoload\_register) with a set of
+basic clases for base functionality. In this file you can add user validation, url 
+routing hacks and any kind of dirty things :-)
+
 Controllers
 -----------
 
