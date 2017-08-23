@@ -1,11 +1,8 @@
 <?php
-	$GLOBALS['SQLITE3'] = ['queryRetries'=>20];
 	if( !isset($GLOBALS['api']['sqlite3']) ){$GLOBALS['api']['sqlite3'] = [];}
 	$GLOBALS['api']['sqlite3'] = array_merge([
-		'dir.lock'=>'',
 		'dir.cache'=>'../db/cache/sqlite3/',
 		'databases'=>[],
-		'use.cache'=>true,
 		'iv.padding'=>25
 	],$GLOBALS['api']['sqlite3']);
 
@@ -14,8 +11,10 @@
 		public $table    = 'hummingbird';
 		public $otable   = 'hummingbird';
 		public $client   = false;
+		public $mode     = false;
 		public $password = false;
 		public $useCache = true;
+		public $retries  = 20;
 		public $indexBy  = '_id';
 		function __construct($params = []){
 			$this->file_path  = realpath($this->db);
@@ -23,17 +22,20 @@
 			$this->path_cache = $GLOBALS['api']['sqlite3']['dir.cache'].$this->file_sum.'/'.md5($this->table).'/';
 		}
 		function instance($mode = 'r'){
-			if( $this->client ){return true;}
-			if( isset($GLOBALS['api']['sqlite3']['db'][$this->file_sum]['client']) ){
-				$this->client = &$GLOBALS['api']['sqlite3']['db'][$this->file_sum]['client'];
+			if( !class_exists('SQLite3') ){return false;}
+			if( $mode == 'w' ){$mode = (SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE);}
+			if( $mode == 'r' ){$mode = (SQLITE3_OPEN_READONLY);}
+
+			if( $this->client && $this->mode == $mode ){return true;}
+			if( isset($GLOBALS['api']['sqlite3']['databases'][$this->file_sum]['client'])
+			 && $GLOBALS['api']['sqlite3']['databases'][$this->file_sum]['mode'] == $mode ){
+				$this->client = &$GLOBALS['api']['sqlite3']['databases'][$this->file_sum]['client'];
 				return true;
 			}
 
-			if( $mode == 'w' ){$mode = (SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE);}
-			if( $mode == 'r' ){$mode = (SQLITE3_OPEN_READONLY);}
 			$oldmask = umask(0);
 			if( !file_exists($this->db) ){
-				$r = file_put_contents($this->db,'',LOCK_EX);
+				$r = @file_put_contents($this->db,'',LOCK_EX);
 				if( $r === false ){return false;}
 				chmod($this->db,0777);
 			}
@@ -43,16 +45,23 @@
 			$this->path_cache = $GLOBALS['api']['sqlite3']['dir.cache'].$this->file_sum.'/'.md5($this->table).'/';
 
 			try{
-				$this->client = new SQLite3($this->file_path,$mode,$this->password);
+				if( !empty($GLOBALS['api']['sqlite3']['databases'][$this->file_sum]['client']) ){
+					/* The database was already open and we are just changing from 'r' mode
+					 * to 'w' mode, so clean the old one before opening it again */
+					$this->_close();
+				}
+
+				$GLOBALS['api']['sqlite3']['databases'][$this->file_sum]['client'] = new SQLite3($this->file_path,$mode,$this->password);
+				$this->client = &$GLOBALS['api']['sqlite3']['databases'][$this->file_sum]['client'];
+				$this->mode   = $mode;
 			}catch( Exception $e ){
-				sqlite3_close($this->client);
+				$this->_close();
 				$this->db_last_errno = 14;
 				$this->db_last_error = 'unable to open database file';
 				return false;
 			}
-			$GLOBALS['api']['sqlite3']['databases'][$this->file_sum] = [
-				 'client'=>$this->client
-				,'mode'=>$mode
+			$GLOBALS['api']['sqlite3']['databases'][$this->file_sum] += [
+				 'mode'=>$this->mode
 				,'path'=>$this->file_path
 				,'mame'=>$this->file_name
 				,'sum'=>$this->file_sum
@@ -60,7 +69,7 @@
 			if( $mode == 6 ){
 				/* Mode 6 = (SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE) */
 				if( !is_writable($this->file_path) ){
-					sqlite3_close($db);
+					$this->_close();
 					$this->db_last_errno = 14;
 					$this->db_last_error = 'unable to open database file';
 					return false;
@@ -163,14 +172,17 @@
 			if( $query == ' )' ){$query = false;}
 			return $query;
 		}
-		function _close(&$db = false,$shouldCommit = false){
-			//FIXME: no creo que funcione
-			if($shouldCommit){$r = sqlite3_exec('COMMIT;',$db);$GLOBALS['DB_LAST_QUERY_ERRNO'] = $db->lastErrorCode();$GLOBALS['DB_LAST_QUERY_ERROR'] = $db->lastErrorMsg();}
-			$sqliteOB = sqlite3_get($db);
-			/* Si la base de datos estaba abierta, liberamos el lock, pero solo si este proceso es quien ha registrado este lock ($checkpid = true) */
-			if($sqliteOB && $sqliteOB['fileMode'] == 6){$r = sqlite3_lock_release($db,true);}
-			$db->close();
-			$db = false;
+		function _close($shouldCommit = false){
+			//if($shouldCommit){$r = sqlite3_exec('COMMIT;',$db);$GLOBALS['DB_LAST_QUERY_ERRNO'] = $db->lastErrorCode();$GLOBALS['DB_LAST_QUERY_ERROR'] = $db->lastErrorMsg();}
+			if( $this->mode == 6 ){
+				/* If the database was open, release the lock but only if this 
+				 * process registered it ($checkpid = true) */
+				$r = $this->_lock_release(true);
+			}
+			$this->client->close();
+			unset($GLOBALS['api']['sqlite3']['databases'][$this->file_sum]);
+			$this->mode   = false;
+			$this->client = false;
 			return $shouldCommit ? $r : true;
 		}
 		function _count($clause = false,$params = []){
@@ -229,7 +241,8 @@
 				return $rows;
 			}
 
-			$r = $this->client->query($this->db_last_query);
+			
+			$r = @$this->client->query($this->db_last_query);
 			$rows = [];
 
 			if( !isset($params['indexBy']) && isset($this->indexBy) ){$params['indexBy'] = $this->indexBy;}
@@ -258,7 +271,7 @@
 
 			$this->db_last_query = 'DELETE FROM `'.$this->table.'` WHERE '.$clause.';';
 
-			$r = $this->client->exec($this->db_last_query);
+			$r = @$this->client->exec($this->db_last_query);
 			return $r;
 		}
 		function _removeByID($id = false,$params = []){
@@ -316,12 +329,17 @@
 				 || strpos($this->client->lastErrorMsg(),'NULL constraint failed') ){
 					return ($data = $this->_r(__FILE__,__LINE__));
 				}
+
 				if( empty($GLOBALS['api']['sqlite3']['tables'][$this->table])
 				 && empty($GLOBALS['api']['sqlite3']['tables'][$this->otable]) ){
 					return ($data = $this->_r(__FILE__,__LINE__));
 				}
+
+				$this->db_last_query_tmp = $this->db_last_query;
 				$r = $this->_createTable();
 				if( isset($r['errorDescription']) ){return $r;}
+
+				$this->db_last_query = $this->db_last_query_tmp;
 				$r = @$this->client->exec($this->db_last_query);
 				if( $r === false ){return ($data = $this->_r(__FILE__,__LINE__));}
 			}
@@ -375,6 +393,54 @@
 			//if(isset($GLOBALS['indexes'][$tableName])){$r = sqlite3_createIndex($tableName,$GLOBALS['indexes'][$tableName],$params['db']);if(isset($r['errorDescription'])){if($shouldClose){sqlite3_close($params['db']);}return $r;}}
 			//if(($tableName != $aTableName) && isset($GLOBALS['indexes'][$aTableName])){$r = sqlite3_createIndex($tableName,$GLOBALS['indexes'][$aTableName],$params['db']);if(isset($r['errorDescription'])){if($shouldClose){sqlite3_close($params['db']);}return $r;}}
 				
+			return true;
+		}
+		function _lock_acquire($wait = false){
+			$lock = $this->file_path.'.lock';
+			$pid  = ($isLocked = file_exists($lock)) ? file_get_contents($lock) : false;
+
+			/* If the database is locked and the process that made the lock
+			 * not exists anymore, we should release */
+			if( $isLocked && !file_exists('/proc/'.$pid) ){$isLocked = !$this->_lock_release();}
+			if( $isLocked && !$wait ){return false;}
+			$secure = time();
+			while( $isLocked && $wait ){
+				/* Avoid infinite bucle */
+				if( (time() - $secure) > 2 ){return false;}
+				usleep(200000/* 2 x 1/10 seconds */);
+			}
+			$pid = getmypid();
+			//FIXME: register a tick to update this
+			$oldmask = umask(0);
+			$r = file_put_contents($lock,$pid,LOCK_EX);
+			umask($oldmask);
+			return $r;
+		}
+		function _lock_release($checkpid = false){
+			$lock = $this->file_path.'.lock';
+			if( !file_exists($lock) ){return true;}
+			/* If the process that established the lock
+			 * doesnt match with the actual process and we dont
+			 * want to force release, we exit */
+			if( $checkpid && (file_get_contents($lock) != getmypid()) ){
+				return false;
+			}
+			$r = unlink($lock);
+			return $r;
+		}
+		function _unlock(){
+			/* INI-timeout
+			 * Control the -shm and -wal files, if there is a kill -9 or other things and the database
+			 * gets locked forever, we need to release it somehow, the timeout is about 1 minute (1 * 60) */
+			foreach( ['-shm','-wal'] as $ext ){
+				$f = $this->file_path.$ext;
+				if( !file_exists($f) ){continue;}
+				$stat = stat($f);
+				$diff = time() - $stat['mtime'];
+				if( $diff < 1 * 60 ){return false;}
+				unlink($f);
+			}
+			/* END-timeout */
 			return true;
 		}
 		function _cache_set($query = '',$data = ''){
