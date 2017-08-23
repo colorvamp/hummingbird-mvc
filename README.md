@@ -1,7 +1,32 @@
 hummingbird-mvc
 ===============
 
-Basic PHP Model-View-Controller skeleton
+Basic PHP Model-View-Controller skeleton. Made with performance in mind, it uses a
+lightweight dispatcher of about 60 lines of code. The controllers are builds upon
+static functions to avoid class initialization penalties at large scale but trying
+to keep as much cleanness and structuration as possible.
+
+Controllers
+-----------
+
+Controllers are located in 'resources/controllers/' and will map his name as an url
+entrypoint.
+
+```
+              controller
+                   │
+                   │   method   params
+               ┌───┴──┐ ┌─┴┐ ┌─────┴─────┐
+               │      │ │  │ │           │
+domain.example/shoutbox/post/param1/param2
+```
+
+The previous example will try to match entrypoint using this order:
+1. 'shoutbox_post' function inside 'shoutbox.php' with params (param1,param2)
+2. 'shoudbox_main' function inside 'shoutbox.php' with params (post,param1,param2)
+3. 'index_shoutbox' function inside 'index.php' with params (post,param1,param2)
+4. 'index_main' function inside 'index.php' with params (shoutbox,post,param1,param2)
+
 
 Installation with apache 2.4 in ubuntu
 --------------------------------------
