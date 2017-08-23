@@ -64,7 +64,7 @@
 	}
 	function common_resetReplaceIteration(){$GLOBALS['inc']['common']['replace'] = 0;}
 	function common_replaceIncludes($blob){
-		$regexp = '!{%@(?<template>[a-zA-Z0-9_\.\-/]+)%}!sm';
+		$regexp = '!{{@(?<template>[a-zA-Z0-9_\.\-/]+)}}!sm';
 
 		$GLOBALS['inc']['common']['replace'] = 0;
 		while( preg_match($regexp,$blob,$m) ){
@@ -83,11 +83,11 @@
 
 		/* Ahora reemplazamos parte de la lógica */
 		$GLOBALS['inc']['common']['replace'] = 0;
-		while( preg_match('/{%[#\^]([a-zA-Z0-9_\.\-]+)%}(.*?){%\/\1%}/sm',$blob) ){
+		while( preg_match('/{{[#\^]([a-zA-Z0-9_\.\-]+)}}(.*?){{\/\1}}/sm',$blob) ){
 			$GLOBALS['inc']['common']['replace']++;
 			if($GLOBALS['inc']['common']['replace'] > 20){echo 'max replaces';exit;}
 
-			$blob = preg_replace_callback('!{%(?<operator>[#\^])(?<word>[a-zA-Z0-9_\.\-]+)%}(?<snippet>.*?){%/\2%}!sm',function($m) use (&$pool,&$TEMPLATE){
+			$blob = preg_replace_callback('!{{(?<operator>[#\^])(?<word>[a-zA-Z0-9_\.\-]+)}}(?<snippet>.*?){{/\2}}!sm',function($m) use (&$pool,&$TEMPLATE){
 				//if( $m['word'] == 'install_steps_config' ){var_dump(common_findKword2($m['word'],$pool));exit;}
 				if( ($word = common_findKword($m['word'],$pool)) === false ){
 					$word = common_findKword($m['word'],$TEMPLATE);
@@ -121,7 +121,7 @@
 
 		$GLOBALS['inc']['common']['replace'] = 0;
 		$notFound = [];
-		while( ($hasElems = preg_match_all('/{%[a-zA-Z0-9_\.\-]+%}/',$blob,$reps)) ){
+		while( ($hasElems = preg_match_all('/{{[a-zA-Z0-9_\.\-]+}}/',$blob,$reps)) ){
 			$GLOBALS['inc']['common']['replace']++;
 			$reps = array_unique($reps[0]);
 			foreach($reps as $k=>$rep){
@@ -160,14 +160,14 @@
 		/* INI-BLOG_SCRIPT_VARS */
 		if( count($GLOBALS['inc']['common']['js.files']) ){
 			$TEMPLATE['PAGE.SCRIPT'] = array_map(function($n){
-				if( substr($n['url'],0,4) != 'http' ){$n['url'] = '{%w.indexURL%}'.$n['url'];}
+				if( substr($n['url'],0,4) != 'http' ){$n['url'] = '{{w.indexURL}}'.$n['url'];}
 				return '<script type="text/javascript" src="'.$n['url'].'" '.implode(' ',$n['attr']).'></script>';
 			},$GLOBALS['inc']['common']['js.files']);
 			$TEMPLATE['PAGE.SCRIPT'] = implode(PHP_EOL,$TEMPLATE['PAGE.SCRIPT']);
 		}
 		if( count($GLOBALS['inc']['common']['css.files']) ){
 			$TEMPLATE['PAGE.STYLE'] = array_map(function($n){
-				if( substr($n,0,4) != 'http' ){$n = '{%w.indexURL%}'.$n;}
+				if( substr($n,0,4) != 'http' ){$n = '{{w.indexURL}}'.$n;}
 				return '<link href="'.$n.'" rel="stylesheet">';
 			},$GLOBALS['inc']['common']['css.files']);$TEMPLATE['PAGE.STYLE'] = implode(PHP_EOL,$TEMPLATE['PAGE.STYLE']);}
 		/* END-BLOG_SCRIPT_VARS */
@@ -176,7 +176,7 @@
 		if(isset($TEMPLATE['META.OG.IMAGE'])){$TEMPLATE['META.OG.IMAGE'] = '<meta property="og:image" content="'.$TEMPLATE['META.OG.IMAGE'].'"/>'.PHP_EOL;}
 		/* END-META */
 		$GLOBALS['inc']['common']['output'] = common_replaceInTemplate($GLOBALS['inc']['common']['output'],$TEMPLATE);
-		$GLOBALS['inc']['common']['output'] = preg_replace('/{%[a-zA-Z0-9_\.\-]+%}/','',$GLOBALS['inc']['common']['output']);
+		$GLOBALS['inc']['common']['output'] = preg_replace('/{{[a-zA-Z0-9_\.\-]+}}/','',$GLOBALS['inc']['common']['output']);
 		return $GLOBALS['inc']['common']['output'];
 	}
 	$GLOBALS['COMMON']['SNIPPETCACHE'] = array();
@@ -243,12 +243,12 @@
 		$p = '<ul class="pager">';
 		foreach($arr as $k=>$v){
 			switch($v){
-				case 'pd':$p .= '<li>{%prev%}</li>';break;
-				case 'pe':$p .= '<li><a href="{%url%}'.(($current-1 > 1) ? '{%add%}'.($current-1) : '').'{%params%}">{%prev%}</a></li>';break;
-				case 'nd':$p .= '<li>{%next%}</li>';break;
-				case 'ne':$p .= '<li><a href="{%url%}{%add%}'.($current+1).'{%params%}">{%next%}</a></li>';break;
+				case 'pd':$p .= '<li>{{prev}}</li>';break;
+				case 'pe':$p .= '<li><a href="{{url}}'.(($current-1 > 1) ? '{{add}}'.($current-1) : '').'{{params}}">{{prev}}</a></li>';break;
+				case 'nd':$p .= '<li>{{next}}</li>';break;
+				case 'ne':$p .= '<li><a href="{{url}}{{add}}'.($current+1).'{{params}}">{{next}}</a></li>';break;
 				case 'c':$p .= '<li class="current">'.$k.'</li>';break;
-				default:$p .= '<li><a href="{%url%}'.(($k > 1) ? '{%add%}'.$k : '').'{%params%}">'.$k.'</a></li>';
+				default:$p .= '<li><a href="{{url}}'.(($k > 1) ? '{{add}}'.$k : '').'{{params}}">'.$k.'</a></li>';
 			}
 		}
 		$p .= '</ul>';

@@ -4,6 +4,7 @@
 
 	include_once('inc.common.php');
 	common_setBase('base');
+	if( !function_exists('mb_strlen') ){echo 'Please install php-mbstring'.PHP_EOL;exit;}
 
 	function __autoload( $name ){
 		switch( $name ){
@@ -12,7 +13,9 @@
 			case '_mongodb':
 				if( class_exists('MongoId') ){include('classes/class._mongo.php');break;}
 				include('classes/class._mongodb.php');break;
-			case '_sqlite3':	include('classes/class._sqlite3.php');break;
+			case '_sqlite3':
+				if( !class_exists('SQLite3') ){echo 'Please install php-sqlite3'.PHP_EOL;exit;}
+				include('classes/class._sqlite3.php');break;
 			case '_mysql':		include('classes/class._mysql.php');break;
 			/* END-Databases */
 

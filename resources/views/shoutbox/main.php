@@ -1,12 +1,12 @@
 	<div class="wrapper">
-		{%permission.warning%}
-		{%#shoutOBs%}
-			{%@snippets/shout.node%}
-		{%/shoutOBs%}
+		{{permission.warning}}
+		{{#shoutOBs}}
+			{{@snippets/shout.node}}
+		{{/shoutOBs}}
 		<div class="block">
 			<div class="image">
 				<div class="glow"></div>
-				<img src="{%w.indexURL%}/images/avatar"/>
+				<img src="{{w.indexURL}}/images/avatar"/>
 			</div>
 			<div class="wrapper">
 				<div class="block-header">

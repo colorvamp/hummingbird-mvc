@@ -1,5 +1,5 @@
 <?php
-	$TEMPLATE['main.section.conversation'] = true;
+	$TEMPLATE['main.section.main'] = true;
 
 	function index_main($param = false){
 		global $TEMPLATE;
