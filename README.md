@@ -10,7 +10,10 @@ Controllers
 -----------
 
 Controllers are located in 'resources/controllers/' and will map his name as an url
-entrypoint.
+entrypoint. The controller 'index.php' with the function 'index_main' inside is a 
+must for fallback. If you created a new controller, it needs to start with a 
+controller_main function (replace 'controller' with the name of the controller).
+
 
 ```
               controller
@@ -21,12 +24,16 @@ entrypoint.
 domain.example/shoutbox/post/param1/param2
 ```
 
-The previous example will try to match entrypoint using this order:
-1. 'shoutbox_post' function inside 'shoutbox.php' with params (param1,param2)
-2. 'shoudbox_main' function inside 'shoutbox.php' with params (post,param1,param2)
-3. 'index_shoutbox' function inside 'index.php' with params (post,param1,param2)
-4. 'index_main' function inside 'index.php' with params (shoutbox,post,param1,param2)
+The concept is simple, the dispatcher will try to match the most accurate entrypoint
+for the current url depending on things like if the controller file exists or if the
+related function exists. The previous example will try to match entrypoint using this order:
 
+```
+ 'shoutbox_post'  function inside 'shoutbox.php' controller with params (param1,param2)
+ 'shoudbox_main'  function inside 'shoutbox.php' controller with params (post,param1,param2)
+ 'index_shoutbox' function inside 'index.php'    controller with params (post,param1,param2)
+ 'index_main'     function inside 'index.php'    controller with params (shoutbox,post,param1,param2)
+```
 
 Installation with apache 2.4 in ubuntu
 --------------------------------------
