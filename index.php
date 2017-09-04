@@ -4,8 +4,12 @@
 	if( substr($_SERVER['SERVER_NAME'],0,7) == '192.168'
 	 || (!empty($_SERVER['SERVER_ADDR']) && $_SERVER['SERVER_ADDR'] == '127.0.0.1') ){$GLOBALS['w.localhost'] = true;}
 
-	$GLOBALS['w.indexURL'] = 'http://'.$_SERVER['SERVER_NAME'];
-	$GLOBALS['w.currentURL'] = 'http://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
+	$protocol = 'http';
+	if( isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on' ){
+		$protocol .= 's';
+	}
+	$GLOBALS['w.indexURL'] = $protocol.'://'.$_SERVER['SERVER_NAME'];
+	$GLOBALS['w.currentURL'] = $protocol.'://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
 	$GLOBALS['w.page'] = 1;
 
 	/* INI-Mobile detection */
