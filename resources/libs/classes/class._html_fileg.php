@@ -42,6 +42,10 @@
 					$params['post'] = http_build_query($params['post']);
 					$opts['http']['header']['content-type'] = 'application/x-www-form-urlencoded';
 				}
+				if( json_decode($params['post']) ){
+					/* Detect a valid json string for raw body */
+					$opts['http']['header']['content-type'] = 'application/json';
+				}
 				$opts['http']['header']['content-length'] = strlen($params['post']);
 				$opts['http']['method']  = 'POST';
 				$opts['http']['content'] = $params['post'];
@@ -102,7 +106,7 @@
 				/* Processing cookies */
 				foreach( $m[0] as $k=>$dummy ){
 					$cookie = [];
-					$r = preg_match_all('!(?<key>[a-zA-Z0-9\-_\.]*)=(?<value>[^;]*)!i',$m['cookie'][$k],$c);
+					$r = preg_match_all('!(?<key>[a-zA-Z0-9\-_\.\[\]]*)=(?<value>[^;]*)!i',$m['cookie'][$k],$c);
 					if( ($p = array_search('path',$c['key'])) !== false ){
 						$cookie['path'] = $c['value'][$p];
 						unset($c['key'][$p],$c['value'][$p]);
