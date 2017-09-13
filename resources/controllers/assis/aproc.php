@@ -13,6 +13,40 @@
 		$cliPath   = realPath(getcwd().'/'.$workerFolder).'/';
 
 		if( isset($_POST['subcommand']) ){switch($_POST['subcommand']){
+			case 'worker.schedule.launch':
+				if( !isset($_POST['_id']) || !($workerOB = $_proc->getByID($_POST['_id'])) ){common_r();}
+				if( $workerOB['procStatus'] != 'scheduled' && $workerOB['procStatus'] != 'scheduled.disabled' ){common_r();}
+				$workerCopy = $workerOB;
+				unset($workerCopy['_id']);
+				$workerCopy['procStatus'] = 'awaiting';
+				$r = $_proc->save($workerCopy);
+				if( isset($workerCopy['errorDescription']) ){print_r($workerCopy);exit;}
+				common_r();
+			case 'worker.schedule.launch.fix':
+				if( !isset($_POST['_id']) || !($workerOB = $_proc->getByID($_POST['_id'])) ){common_r();}
+				if( $workerOB['procStatus'] != 'scheduled' ){common_r();}
+				$workerOB['procScheduled']['next'] = $_proc->schedule($workerOB);
+				$r = $_proc->save($workerOB);
+				if( isset($workerCopy['errorDescription']) ){print_r($workerCopy);exit;}
+				common_r();
+			case 'worker.schedule.disable':
+				if( !isset($_POST['_id']) || !($workerOB = $_proc->getByID($_POST['_id'])) ){common_r();}
+				if( $workerOB['procStatus'] != 'scheduled' ){common_r();}
+				$workerOB['procStatus'] = 'scheduled.disabled';
+				$r = $_proc->save($workerOB);
+				common_r();
+			case 'worker.schedule.enable':
+				if( !isset($_POST['_id']) || !($workerOB = $_proc->getByID($_POST['_id'])) ){common_r();}
+				if( $workerOB['procStatus'] != 'scheduled.disabled' ){common_r();}
+				$workerOB['procStatus'] = 'scheduled';
+				$r = $_proc->save($workerOB);
+				common_r();
+			case 'worker.launch':
+				if( !isset($_POST['_id']) || !($workerOB = $_proc->getByID($_POST['_id'])) ){common_r();}
+				if( $workerOB['procStatus'] != 'test' ){common_r();}
+				$workerOB['procStatus'] = 'awaiting';
+				$r = $_proc->save($workerOB);
+				common_r();
 			case 'worker.save':
 				$_POST['worker'] = str_replace('/','',$_POST['worker']);
 				if( !file_exists($workerFolder.$_POST['worker']) ){common_r();}
@@ -62,7 +96,7 @@
 		foreach( $workers as &$worker ){$worker = ['name'=>basename($worker)];}
 		unset($worker);
 
-		$workerOBs = $_proc->getWhere(['procStatus'=>['$in'=>['awaiting','test','scheduled']]]);
+		$workerOBs = $_proc->getWhere(['procStatus'=>['$in'=>['awaiting','test','scheduled','scheduled.disabled']]]);
 		$daemon    = $_proc->getSingle(['procLock'=>'_proc.daemon','procStatus'=>'running']);
 		foreach( $workerOBs as &$workerOB ){
 			$workerOB['is.'.$workerOB['procStatus']] = true;
