@@ -104,6 +104,53 @@
 				<div>
 					{{procStatus}}
 					<div class="btn-group mini">
+						{{#is.scheduled}}
+						<div class="btn dropdown-toggle"><i class="fa fa-close"></i> Disable
+							<div class="dropdown-menu padded">
+								<h4><i class="fa fa-close"></i> Disable the execution of this scheduled worker</h4>
+								<p>The scheduled will be disabled.</p>
+								<form method="post">
+									<input type="hidden" name="subcommand" value="worker.schedule.disable">
+									<input type="hidden" name="_id" value="{{_id}}">
+									<div class="btn-group right">
+										<div class="btn btn-close"><i class="fa fa-close"></i> Close</div>
+										<button class="btn"><i class="fa fa-close"></i> Disable</button>
+									</div>
+								</form>
+							</div>
+						</div>
+						<div class="btn dropdown-toggle"><i class="fa fa-rocket"></i> Launch
+							<div class="dropdown-menu padded">
+								<h4><i class="fa fa-rocket"></i> Launch Now</h4>
+								<p>Send the worker to the process queue.</p>
+								<form method="post">
+									<input type="hidden" name="subcommand" value="worker.schedule.launch">
+									<input type="hidden" name="_id" value="{{_id}}">
+									<div class="btn-group right">
+										<div class="btn btn-close"><i class="fa fa-close"></i> Close</div>
+										<button class="btn"><i class="fa fa-rocket"></i> Launch</button>
+									</div>
+								</form>
+							</div>
+						</div>
+						{{/is.scheduled}}
+						{{#is.scheduled.disabled}}
+						<div class="btn dropdown-toggle"><i class="fa fa-check"></i> Enable
+							<div class="dropdown-menu padded">
+								<h4><i class="fa fa-check"></i> Enable the execution of this scheduled worker</h4>
+								<p>The scheduled will be enabled.</p>
+								<form method="post">
+									<input type="hidden" name="subcommand" value="worker.schedule.enable">
+									<input type="hidden" name="_id" value="{{_id}}">
+									<div class="btn-group right">
+										<div class="btn btn-close"><i class="fa fa-close"></i> Close</div>
+										<button class="btn"><i class="fa fa-check"></i> Enable</button>
+									</div>
+								</form>
+							</div>
+						</div>
+						{{/is.scheduled.disabled}}
+						{{#is.test}}
 						<div class="btn dropdown-toggle"><i class="fa fa-rocket"></i> Launch
 							<div class="dropdown-menu padded">
 								<div class="box">
@@ -132,6 +179,21 @@
 								</div>
 							</div>
 						</div>
+						{{/is.test}}
+						<div class="btn dropdown-toggle"><i class="fa fa-trash"></i> Remove
+							<div class="dropdown-menu padded">
+								<h4><i class="fa fa-trash"></i> Remove</h4>
+								<p>Remove Worker.</p>
+								<form method="post">
+									<input type="hidden" name="subcommand" value="worker.remove">
+									<input type="hidden" name="_id" value="{{_id}}">
+									<div class="btn-group right">
+										<div class="btn btn-close">Close</div>
+										<button class="btn"><i class="fa fa-trash"></i> Remove</button>
+									</div>
+								</form>
+							</div>
+						</div>
 					</div>
 				</div>
 				<div>
@@ -151,20 +213,6 @@
 								<div class="btn-group right">
 									<div class="btn btn-close">Close</div>
 								</div>
-							</div>
-						</div>
-						<div class="btn dropdown-toggle"><i class="fa fa-trash"></i> Remove
-							<div class="dropdown-menu padded">
-								<h4><i class="fa fa-trash"></i> Remove</h4>
-								<p>Remove Worker.</p>
-								<form method="post">
-									<input type="hidden" name="subcommand" value="worker.remove">
-									<input type="hidden" name="_id" value="{{_id}}">
-									<div class="btn-group right">
-										<div class="btn btn-close">Close</div>
-										<button class="btn"><i class="fa fa-trash"></i> Remove</button>
-									</div>
-								</form>
 							</div>
 						</div>
 					</div>
