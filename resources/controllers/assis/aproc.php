@@ -51,7 +51,7 @@
 				$_POST['worker'] = str_replace('/','',$_POST['worker']);
 				if( !file_exists($workerFolder.$_POST['worker']) ){common_r();}
 				if( isset($_POST['status']) && !in_array($_POST['status'],['test','scheduled','awaiting']) ){$_POST['status'] = 'test';}
-				if( isset($_POST['lock'])   && !in_array($_POST['lock'],['shared','exclusive']) ){$_POST['lock'] = 'shared';}
+				if( isset($_POST['lockMode'])   && !in_array($_POST['lockMode'],['shared','exclusive']) ){$_POST['lockMode'] = 'shared';}
 				if( isset($_POST['params']) && !($_POST['params'] = json_decode($_POST['params'],1)) ){$_POST['params'] = [];}
 
 				if( !isset($_POST['minutes']) ){$_POST['minutes'] = '*';}
@@ -74,7 +74,7 @@
 				$workerOB = [
 					 'procStatus'=>$_POST['status']
 					,'procLock'=>$_POST['worker']
-					,'procLockMode'=>$_POST['lock']
+					,'procLockMode'=>$_POST['lockMode']
 					,'procWorker'=>$_POST['worker']
 					,'procParams'=>$_POST['params']
 					,'procScheduled'=>[
