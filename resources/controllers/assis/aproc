@@ -17,7 +17,7 @@
 				$_POST['worker'] = str_replace('/','',$_POST['worker']);
 				if( !file_exists($workerFolder.$_POST['worker']) ){common_r();}
 				if( isset($_POST['status']) && !in_array($_POST['status'],['test','scheduled','awaiting']) ){$_POST['status'] = 'test';}
-				if( isset($_POST['lock'])   && !in_array($_POST['lock'],['shared','exclusive']) ){$_POST['status'] = 'shared';}
+				if( isset($_POST['lock'])   && !in_array($_POST['lock'],['shared','exclusive']) ){$_POST['lock'] = 'shared';}
 				if( isset($_POST['params']) && !($_POST['params'] = json_decode($_POST['params'],1)) ){$_POST['params'] = [];}
 
 				if( !isset($_POST['minutes']) ){$_POST['minutes'] = '*';}
