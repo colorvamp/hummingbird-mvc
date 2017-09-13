@@ -418,7 +418,7 @@
 	$r = register_shutdown_function('proc_on_shutdown');
 
 	function proc_lock(){
-		$proc = new proc();
+		$proc = new _proc();
 		$proc->cleanup();
 		$e = new Exception();
 		$trace = $e->getTrace();
