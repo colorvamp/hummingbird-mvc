@@ -6,7 +6,7 @@
 			<p>Server workers management</p>
 		</div>
 	</header>
-	{%@aproc/snippets/main.tabs%}
+	{{@aproc/snippets/main.tabs}}
 	<section>
 		<h2><i class="fa fa-list"></i> Scheduled workers awaiting</h2>
 		<p>The next table will show the workers scheduled or awaiting to be launched.</p>
@@ -22,9 +22,9 @@
 								<div>Worker</div>
 								<div>
 									<select name="worker">
-										{%#workers%}
-										<option value="{%name%}">{%name%}</option>
-										{%/workers%}
+										{{#workers}}
+										<option value="{{name}}">{{name}}</option>
+										{{/workers}}
 									</select>
 								</div>
 							</li>
@@ -98,11 +98,11 @@
 				<div class="fit">LockMode</div>
 				<div>Command</div>
 			</li>
-			{%html.table.commands%}
-			{%#workerOBs%}
+			{{html.table.commands}}
+			{{#workerOBs}}
 			<li>
 				<div>
-					{%procStatus%}
+					{{procStatus}}
 					<div class="btn-group mini">
 						<div class="btn dropdown-toggle"><i class="fa fa-rocket"></i> Launch
 							<div class="dropdown-menu padded">
@@ -110,14 +110,14 @@
 									<h4><i class="fa fa-rocket"></i> Manual Launch</h4>
 									<p>Launch options for this worker.</p>
 									<div>cd resources/cli</div>
-									<div>php cli.proc.php worker {%procWorker%} {%_id%}</div>
+									<div>php cli.proc.php worker {{procWorker}} {{_id}}</div>
 								</div>
 								<div class="box">
 									<h4><i class="fa fa-rocket"></i> Launch Now</h4>
 									<p>Send the worker to the process queue.</p>
 									<form method="post">
 										<input type="hidden" name="subcommand" value="worker.awaiting">
-										<input type="hidden" name="_id" value="{%_id%}">
+										<input type="hidden" name="_id" value="{{_id}}">
 										<div class="block-warning">
 											This worker will go to the process queue. The launch daemon will start
 											it as soon as possible.
@@ -135,19 +135,19 @@
 					</div>
 				</div>
 				<div>
-					{%procLockMode%}
+					{{procLockMode}}
 				</div>
 				<div>
-					{%procWorker%}
-					{%#html.next.launch%}
-						({%html.next.launch%})
-					{%/html.next.launch%}
+					{{procWorker}}
+					{{#html.next.launch}}
+						({{html.next.launch}})
+					{{/html.next.launch}}
 					<div class="btn-group mini">
 						<div class="btn dropdown-toggle"><i class="fa fa-cogs"></i> Parameters
 							<div class="dropdown-menu padded">
 								<h4><i class="fa fa-cogs"></i> Parameters</h4>
 								<p>Worker parameters.</p>
-								<div>{%html.params%}</div>
+								<div>{{html.params}}</div>
 								<div class="btn-group right">
 									<div class="btn btn-close">Close</div>
 								</div>
@@ -159,7 +159,7 @@
 								<p>Remove Worker.</p>
 								<form method="post">
 									<input type="hidden" name="subcommand" value="worker.remove">
-									<input type="hidden" name="_id" value="{%_id%}">
+									<input type="hidden" name="_id" value="{{_id}}">
 									<div class="btn-group right">
 										<div class="btn btn-close">Close</div>
 										<button class="btn"><i class="fa fa-trash"></i> Remove</button>
@@ -170,7 +170,7 @@
 					</div>
 				</div>
 			</li>
-			{%/workerOBs%}
+			{{/workerOBs}}
 		</ul>
 	</section>
 	<div class="two-column">
@@ -179,9 +179,9 @@
 				<h2><i class="fa fa-cog"></i> Workers launcher</h2>
 				<p>To dispatch workers with no delay we need a daemon to start the workers processes.</p>
 				<ul class="table radio">
-					<li><div>Status</div><div>{%daemon_procStatus%}</div></li>
-					<li><div>PID</div><div>{%daemon_pid%}</div></li>
-					<li><div>Date</div><div>{%daemon_procDate%} {%daemon_procTime%}</div></li>
+					<li><div>Status</div><div>{{daemon_procStatus}}</div></li>
+					<li><div>PID</div><div>{{daemon_pid}}</div></li>
+					<li><div>Date</div><div>{{daemon_procDate}} {{daemon_procTime}}</div></li>
 				</ul>
 			</section>
 		</div>
