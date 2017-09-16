@@ -42,8 +42,9 @@
 				];
 				$users_TB->save($userOB);
 			}else{
-				$userOB['userIP'] = $_SERVER['REMOTE_ADDR'];
-				$users_TB->save($userOB);
+				$op = [];
+				$op['$set']['userIP'] = $_SERVER['REMOTE_ADDR'];
+				$users_TB->findAndModify(['_id'=>$userOB['_id']],$op);
 			}
 
 			/* INI-Salvamos la image */
