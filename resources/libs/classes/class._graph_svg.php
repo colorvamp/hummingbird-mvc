@@ -69,7 +69,7 @@
 			$width = ($this->legend['width'] ? $this->legend['width'] + 1 : 0) + ($this->cell['width'] + 1) * (count($row['v']));
 			if( !$this->graph['width'] || $width > $this->graph['width'] ){$this->graph['width'] = $width;}
 
-			$this->graphs[] = new _svg_config([
+			$this->graphs[] = new _graph_svg_config([
 				 'type'=>'lines'
 				,'data'=>$data
 			]+$params);
@@ -82,7 +82,7 @@
 			$width = ($this->legend['width'] ? $this->legend['width'] + 1 : 0) + ($this->cell['width'] + 1) * (count($row['v']));
 			if( !$this->graph['width'] || $width > $this->graph['width'] ){$this->graph['width'] = $width;}
 
-			$this->graphs[] = new _svg_config([
+			$this->graphs[] = new _graph_svg_config([
 				 'type'=>'bars'
 				,'data'=>$data
 			]+$params+$this->graph);
@@ -95,7 +95,7 @@
 			$width = ($this->legend['width'] ? $this->legend['width'] + 1 : 0) + ($params['radius'] * 2);
 			if( !$this->graph['width'] || $width > $this->graph['width'] ){$this->graph['width'] = $width;}
 
-			$this->graphs[] = new _svg_config([
+			$this->graphs[] = new _graph_svg_config([
 				 'type'=>'pie'
 				,'data'=>$data
 			]+$params);
