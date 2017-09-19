@@ -26,6 +26,9 @@
 			case '__date':		include('classes/class._date.php');break;
 			case  '_params':	include('classes/class._params.php');break;
 			case '__images':	include('classes/class._images.php');break;
+			case  '_zip':
+				if( !class_exists('ZipArchive') ){echo 'Please install php-zip'.PHP_EOL;exit;}
+				include('classes/class._zip.php');break;
 
 			case '_shoutbox_sqlite3':	include('classes/class._shoutbox.sqlite3.php');break;
 				
