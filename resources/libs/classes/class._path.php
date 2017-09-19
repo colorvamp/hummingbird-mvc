@@ -11,6 +11,7 @@
 			if( is_bool(end($args)) ){$exists = array_pop($args);}
 
 			switch( $this->path ){
+				case ':db':  	$this->path = '../db/';break;
 				case ':tmp':    $this->path = '../db/tmp/';break;
 				case ':images': $this->path = '../db/images/';break;
 				case ':cache':  $this->path = '../db/cache/';break;
