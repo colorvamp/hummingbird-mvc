@@ -1,6 +1,15 @@
 <?php
 	trait __date{
 		public $_date_months_es = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+		public $timezone = '';
+		function date($country = '',$string = ''){
+			if( strlen($country) != 2 ){return false;}
+			$identifiers = DateTimeZone::listIdentifiers(DateTimeZone::PER_COUNTRY,strtoupper($country));
+			if( !$identifiers ){return false;}
+			$identifier  = reset($identifiers);
+			$d = new DateTime('now',new DateTimeZone($identifier));
+			return $d->format($string);
+		}
 		function _date_monthToString($m = 'mm'){
 			if( $m < 1 || $m > 12 ){return false;}
 			return $this->_date_months_es[(int)$m-1];
@@ -17,6 +26,20 @@
 				$dates[] = $from;
 			}
 			return $dates;
+		}
+		function _date_hours(){
+			$hours = range(0,23);
+			foreach( $hours as &$hour ){
+				$hour = str_pad($hour,2,0,STR_PAD_LEFT);
+			}
+			unset($hour);
+			return $hours;
+		}
+		function _date_parse($date = ''){
+			if( preg_match('!^([0-9]{4})\-([0-9]{2})\-([0-9]{2})$!',$date,$m) ){
+				return ['year'=>$m[1],'month'=>$m[2],'day'=>$m[3]];
+			}
+			return false;
 		}
 	}
 	class _date{
