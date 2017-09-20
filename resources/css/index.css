@@ -153,7 +153,8 @@ input[type="text"]:focus,input[type="password"]:focus{border:1px solid #cd5728;b
 .widget-list > .item.active{background:#7f99ca;color:white;}
 .widget-list > .item.selected::before{position:absolute;width:14px;height:14px;top:calc( 50% - 7px );left:6px;font-family:FontAwesome;font-size:14px;content:"\f111";}
 .widget-list > .item.checked::before{position:absolute;width:14px;height:14px;top:calc( 50% - 7px );left:6px;font-family:FontAwesome;font-size:14px;content:"\f00c";}
-.widget-list input[type="radio"]{display:none;}
+.widget-list .item input[type="checkbox"],
+.widget-list .item input[type="radio"]{display:none;}
 /* END-widget-list */
 /* INI-widget-scroll */
 .widget-scroll{position:relative;}
