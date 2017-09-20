@@ -1,5 +1,5 @@
 
-	if(!window['widgets']){window['widgets'] = {};}
+	if( !window['widgets'] ){window['widgets'] = {};}
 	widgets.list = function(h,callback){
 		if( h.getAttribute('data-list') ){return false;}
 		h.setAttribute('data-list',true);
@@ -10,24 +10,47 @@
 		this.height = this.panel.getAttribute('data-height');
 
 		if( this.height && this.height < this.panel.offsetHeight ){
-			this.panel.style.height = this.height+'px';
+			this.panel.style.height = this.height + 'px';
 			this.panel.style.overflow = 'hidden';
 		}
 
+		/* Decide what kind of list is */
+		var hasRadio    = !!this.panel.querySelector('input[type="radio"]');
+		var hasCheckbox = !!this.panel.querySelector('input[type="checkbox"]');
+		var listType    = ( hasRadio && !hasCheckbox ) ? 'radio' : 'checkbox';
+
+		var input = false;
+		var value = h.getAttribute('data-value');
 		var items = Array.prototype.slice.call(this.panel.querySelectorAll('.item'));
 		items.forEach(function(item,k){
-			if( (input = item.querySelector('input[type="radio"]')) && input.checked ){
+			input = item.querySelector('input[type="radio"],input[type="checkbox"]');
+			if( !value && input.checked ){
+				item.classList.add('checked');
+			}else if( value && value == input.value ){
+				input.checked = 'checked';
 				item.classList.add('checked');
 			}
 
 			item.addEventListener('click',function(e){
 				var input = this.querySelector('input');
-				input.checked = 'checked';
+				if( listType == 'radio' ){
+					input.checked = 'checked';
+					items.forEach(function(item,k){
+						item.classList.remove('checked');
+					});
+					this.classList.add('checked');
+					return false;
+				}
 
-				items.forEach(function(item,k){
-					item.classList.remove('checked');
-				});
-				this.classList.add('checked');
+				if( listType == 'checkbox' ){
+					if( this.classList.contains('checked') ){
+						input.checked = '';
+						this.classList.remove('checked');
+					}else{
+						input.checked = 'checked';
+						this.classList.add('checked');
+					}
+				}
 			});
 		});
 
@@ -49,7 +72,7 @@
 		//elem.viewpW = holder.offsetWidth;
 		//elem.startW = elem.getAttribute('width');
 
-		if( !('mouseMoveHandler' in this.panel) ){
+		if( !('handlerMouseMove' in this.panel) ){
 			this.panel.handlerMouseMove = function(e){ths.mousemove(e);}
 			this.panel.handlerMouseUp   = function(e){ths.mouseup(e);}
 		}
@@ -84,4 +107,3 @@
 	if (document.readyState === 'complete' || document.readyState === 'loaded' || document.readyState === 'interactive') {
 		widgets_list_init();
 	}
-
