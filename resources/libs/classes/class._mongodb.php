@@ -142,7 +142,7 @@
 			}
 			$r = current($r->toArray());
 			/* Keep an eye on this. With the older PHP MongoDB extension, the Datetime objects are wrongly created */
-			if ( !($datetime = $r['system']['currentTime']->toDateTime()) ) {
+			if ( 	!($datetime = $r['system']['currentTime']->toDateTime()) ) {
 				 return [ 'errorDescription' => 'TIMESTAMP_ERROR', 'file' => __FILE__, 'line' => __LINE__ ];
 			}
 			$datetime->setTimeZone(new DateTimeZone('Europe/Madrid'));
@@ -167,6 +167,7 @@
 		function save(&$data = [],$params = []){return $this->_save($data,$params);}
 		function iterator($clause = [],$callback = false,$params = []){return $this->_iterator($clause,$callback,$params);}
 		function search($criteria = '',$params = []){return $this->_search($criteria,$params);}
+		function drop(){return $this->_drop();}
 		function log(&$data = [],&$oldData = []){}
 		function _clause(&$clause = []){
 			array_walk_recursive($clause,function(&$value,$key){
@@ -751,6 +752,20 @@
 			}}
 			else{$rows = $result;}
 			return $rows;
+		}
+		function _drop(){
+			$r = $this->collection_get();
+			if( is_array($r) && isset($r['errorDescription']) ){return $r;}
+			$command = ['drop'=>$this->table];
+
+			try {
+				$c = new MongoDB\Driver\Command($command);
+				$r = $this->client->executeCommand($this->db, $c);
+			} catch ( MongoDB\Driver\Exception\Exception $e ) {
+				return ['errorCode'=>$e->getCode(),'errorDescription'=>$e->getMessage(),'file'=>__FILE__,'line'=>__LINE__];
+			}
+
+			return $r;
 		}
 		function ps(){
 			$r = $this->client_get();
