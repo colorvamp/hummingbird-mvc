@@ -171,23 +171,16 @@
 		btn.classList.toggle('active');
 		if( cbOnBeforeOpen && this.isOpen() ){$execByString(cbOnBeforeOpen,[false,btn]);}
 
-		/* INI-Widget-list */
-		if( (elems = this.elem.querySelectorAll('.widget-list')) ){
-			Array.prototype.slice.call(elems).forEach(function(elem){
-				new widgets.list(elem);
-			});
-		}
-		/* END-Widget-list */
-
 		if( !window.VAR ){window.VAR = {};}
 		window.VAR.dropdown = this.elem;
-		var bodyWidth = (document.body.offsetWidth);
+		var body_width = (document.body.offsetWidth);
 		var pos = this.dropdown_menu.getBoundingClientRect();
-		if( pos.width > (bodyWidth-20) ){
-			this.dropdown_menu.style.width = (bodyWidth-20)+'px';
+		if( pos.width > (body_width - 20) ){
+			this.dropdown_menu.style.width = (body_width - 20) + 'px';
+			this.dropdown_menu.style.minWidth = (body_width - 20) + 'px';
 			pos  = this.dropdown_menu.getBoundingClientRect();
 		}
-		var rpos = bodyWidth-(pos.left+pos.width);
+		var rpos = body_width - (pos.left + pos.width);
 		/* If the infoBox is out the page, fix it to the right border */
 		if( rpos < 10 ){this.dropdown_menu.style.left = this.dropdown_menu.offsetLeft+rpos-10+'px';}
 		
