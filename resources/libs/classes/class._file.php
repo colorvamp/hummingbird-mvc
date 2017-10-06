@@ -1,6 +1,7 @@
 <?php
 	class _file{
 		public $path = false;
+		public $name = false;
 		public $file = false;
 		public $fp   = false;
 		public $len  = 0;
@@ -10,13 +11,13 @@
 			$last = array_pop($args);
 			if( is_bool($last) ){$exists = array_pop($args);}
 			if( !preg_match('![^/]+$!',$last,$_name) ){return false;}
-			$_name = $_name[0];
+			$this->name = $_name[0];
 
-			$last = substr($last,0, -1 * strlen($_name) );
+			$last = substr($last,0, -1 * strlen($this->name) );
 			if( $exists ){$args[] = $exists;}
 			$this->path = new _path(...$args);
 
-			$this->file = $this->path.$_name;
+			$this->file = $this->path.$this->name;
 		}
 		function __destruct(){
 			if( $this->fp ){fclose($this->fp);}
@@ -34,7 +35,10 @@
 			return $this->fp;
 		}
 		function close(){
-			if( $this->fp ){fclose($this->fp);}
+			if( $this->fp ){
+				fclose($this->fp);
+				$this->fp = false;
+			}
 		}
 		function stat(){
 			if( !file_exists($this->file) ){
@@ -69,6 +73,11 @@
 				$this->len = 0;
 			}
 			return $r;			
+		}
+		function remove(){
+			$this->close();
+			if( $this->file
+			 && file_exists($this->file) ){unlink($this->file);}
 		}
 		function iterator($glob = '*',$callback = false,$params = []){
 			if( !$this->_open() ){return ['errorDescription'=>'FILE_ERROR','file'=>__FILE__,'line'=>__LINE__];}
