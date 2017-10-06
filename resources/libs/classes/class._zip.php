@@ -19,7 +19,7 @@
 			$this->file = $this->path.$_name;
 		}
 		function __destruct(){
-			if( $this->zip ){$this->zip->close();}
+			if( $this->zip ){$this->close();}
 		}
 		function __toString(){
 			return $this->file;
@@ -33,6 +33,12 @@
 			}
 			$this->zip = $zip;
 			return true;
+		}
+		function close(){
+			if( $this->zip ){
+				$this->zip->close();
+				$this->zip = false;
+			}
 		}
 		function stat(){
 			if( !file_exists($this->file) ){
@@ -65,10 +71,17 @@
 		}
 		function file_put_contents($path = '',$blob = ''){
 			if( !$this->_open() ){return ['errorDescription'=>'ZIP_ERROR','file'=>__FILE__,'line'=>__LINE__];}
+			if( $path[0] == '/' ){$path = substr($path,1);}
 			return $this->zip->addFromString($path,$blob);
 		}
 		function iterator($glob = '*',$callback = false,$params = []){
 			if( !$this->_open() ){return ['errorDescription'=>'ZIP_ERROR','file'=>__FILE__,'line'=>__LINE__];}
 			//FIXME: TODO
+		}
+		function addFile($file = '',$path = ''){
+			if( !$this->_open() ){return ['errorDescription'=>'ZIP_ERROR','file'=>__FILE__,'line'=>__LINE__];}
+			$file = strval($file);
+			if( !file_exists($file) ){return ['errorDescription'=>'FILE_NOT_FOUND','file'=>__FILE__,'line'=>__LINE__];}
+			return $this->zip->addFile($file,$path);
 		}
 	}
