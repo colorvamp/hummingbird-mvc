@@ -37,18 +37,20 @@
 				$params['header']['cookie'] = implode(' ',$params['header']['cookie']);
 			}
 
-			if( isset($params['post']) ){
-				if( is_array($params['post']) ){
-					$params['post'] = http_build_query($params['post']);
+			if( !empty($params['post'])
+			 || !empty($params['delete']) ){
+				$method = !empty($params['post']) ? 'post' : ( !empty($params['delete']) ? 'delete' : false );
+				if( is_array($params[$method]) ){
+					$params[$method] = http_build_query($params[$method]);
 					$opts['http']['header']['content-type'] = 'application/x-www-form-urlencoded';
 				}
-				if( json_decode($params['post']) ){
+				if( json_decode($params[$method]) ){
 					/* Detect a valid json string for raw body */
 					$opts['http']['header']['content-type'] = 'application/json';
 				}
-				$opts['http']['header']['content-length'] = strlen($params['post']);
-				$opts['http']['method']  = 'POST';
-				$opts['http']['content'] = $params['post'];
+				$opts['http']['header']['content-length'] = strlen($params[$method]);
+				$opts['http']['method']  = strtoupper($method);
+				$opts['http']['content'] = $params[$method];
 			}
 			if( isset($params['put']) ){
 				if( is_array($params['put']) ){
