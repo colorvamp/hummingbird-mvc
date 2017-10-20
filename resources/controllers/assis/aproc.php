@@ -168,19 +168,37 @@ exit;
 		};
 
 		$_proc->cleanup();
-		$procOBs = $_proc->getWhere(['procStatus'=>['$in'=>['awaiting','running','finished']]],['order'=>'procStatus']);
+		$plan = [];
+		$plan[] = ['$match'=>['procStatus'=>['$in'=>['awaiting','running','finished']]]];
+		$plan[] = ['$group'=>['_id'=>['procWorker'=>'$procWorker','procStatus'=>'$procStatus'],'last'=>['$last'=>'$_id'],'count'=>['$sum'=>1]]];
+		$result = $_proc->aggregate($plan);
+		if( !isset($result['result']) ){echo 'unknown error';exit;}
+		$procIDs = array_map(function($n){return $n['last'];},$result['result']);
+		/* INI-Indexing count processes */
+		$count_indexed = [];
+		foreach( $result['result'] as $item ){
+			$count_indexed[implode('.',$item['_id'])] = $item['count'];
+		}
+		/* END-Indexing count processes */
+
+		$procOBs = $_proc->getByIDs($procIDs);
 		foreach( $procOBs as &$procOB ){
 			$procOB['is.'.$procOB['procStatus']] = true;
 			if( isset($procOB['procProgress']) && $procOB['procProgress'] > 100 ){$procOB['procProgress'] = 100;}
 			if( !empty($procOB['procParams']) && is_array($procOB['procParams']) ){$procOB['procParams'] = json_encode($procOB['procParams']);}
 			if( isset($procOB['pid']) ){$procOB['html.procDatetime'] = $get_proc_start_datetime($procOB['pid']);}
+
+			if( !empty($procOB['procWorker']) ){
+				$count_index = $procOB['procWorker'].'.'.$procOB['procStatus'];
+				if( !empty($count_indexed[$count_index]) ){$procOB['count.processes'] = $count_indexed[$count_index];}
+			}
 		}
 		unset($procOB);
 
 		$TEMPLATE['procOBs'] = $procOBs;
 		_aproc_main();
 		$TEMPLATE['tab.list'] = true;
-		$TEMPLATE['PAGE.TITLE'] = '[C] Listado de Tareas';
+		$TEMPLATE['PAGE.TITLE'] = '[C] Tasks List';
 		return common_renderTemplate('aproc/list');
 	}
 
