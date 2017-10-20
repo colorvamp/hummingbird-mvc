@@ -90,7 +90,8 @@
 		}
 		function running(&$proc = []){
 			$proc['procStatus'] = 'running';
-			return $this->save($proc);
+			$r = $this->findAndModify(['_id'=>$proc['_id']],['$set'=>['procStatus'=>'running']]);
+			return $r;
 		}
 		function finished(&$proc = []){
 			$proc['procStatus'] = 'finished';
@@ -287,7 +288,6 @@
 		public $pipes   = [];
 		function __construct($work = []){
 			$bin_php = 'php';
-			if( file_exists('/usr/bin/php5.6') ){$bin_php = '/usr/bin/php5.6';}
 
 			$this->work = $work;
 			if( isset($this->work['procWorker']) && $this->work['procWorker'] ){
@@ -326,6 +326,9 @@
 		public $vervose = false;
 		public $params  = [];
 		public $include = [];
+		public $dependencies = [];
+		public $observe = []; /* Observe files to stop in case of change */
+		public $observe_hash = false; /* Hash representing observed files */
 		function __construct($hash = ''){
 			$this->proc   = new _proc();
 			$this->work   = $this->proc->getByID($hash);
@@ -334,21 +337,31 @@
 				if( file_exists($file) ){include_once($file);}
 			}
 			if( trim(shell_exec('whoami')) == 'root' ){$this->vervose = true;}
+			
+			if( !empty($this->dependencies) ){
+				/* Generate observe_hash to check if the files get changes
+				 * over time to control long running workers and reset them */
+				foreach( $this->dependencies as $dependency ){
+					$reflector = new ReflectionClass($dependency);
+					$this->observe[] = $reflector->getFileName();
+				}
+				$this->observe_hash = $this->fingerprint();
+			}
 		}
 		function __destruct(){
 			$this->clean();
 		}
 		function task(){
-
+			/* Task the worker should do */
 		}
 		function clean(){
-
+			/* Cleanup method */
 		}
 		function start(){
 			if( !$this->work ){return false;}
 
-			$this->work['procMsgLines'] = [];
-			$this->proc->save($this->work);
+			/* Reset procMsgLines */
+			$this->proc->findAndModify(['_id'=>$this->work['_id']],['$set'=>['procMsgLines'=>[]]]);
 
 			$this->proc->running($this->work);
 			$this->update(0);
@@ -360,11 +373,25 @@
 			$perc = round($current,2);
 			if( $total ){
 				$perc = floatval($current/$total);
-				$perc = round($perc*100,2);
+				$perc = round($perc * 100,2);
 				$this->work['procCurrent'] = $current;
 			}
 			$this->work['procProgress'] = $perc;
 			$this->proc->save($this->work);
+		}
+		function check(){
+			//FIXME: avoid consecutive calls with a timestamp
+			/* If the libraries this worker depend on changes, we stop the worker
+			 * to recycle the code of this libs */
+			if( $this->fingerprint() != $this->observe_hash ){
+				$this->outln('Forced stop to sync libs',time());
+				exit;
+			}
+		}
+		function fingerprint(){
+			$md5_libs = [];
+			foreach( $this->observe as $lib ){$md5_libs[$lib] = md5_file($lib);}
+			return md5(implode($md5_libs));
 		}
 		function out($str = '',$timestamp = false){
 			if( !isset($this->work['procMsg']) ){$this->work['procMsg'] = '';}
