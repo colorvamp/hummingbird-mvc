@@ -366,16 +366,25 @@
 			$this->work['procProgress'] = $perc;
 			$this->proc->save($this->work);
 		}
-		function out($str = ''){
+		function out($str = '',$timestamp = false){
 			if( !isset($this->work['procMsg']) ){$this->work['procMsg'] = '';}
+			if( $timestamp ){$str = '['.date('Y-m-d H:i:s').'] '.$str;}
 			$this->work['procMsg'] = $str;
 			$this->proc->save($this->work);
 		}
-		function outln($str = ''){
+		function outln($str = '',$timestamp = true){
 			if( !isset($this->work['procMsgLines']) ){$this->work['procMsgLines'] = [];}
-			$line = '['.date('Y-m-d H:i:s').'] '.$str.PHP_EOL;
-			if( $this->vervose ){echo $line;}
-			$this->work['procMsgLines'][] = $line;
+			if( $timestamp ){$str = '['.date('Y-m-d H:i:s').'] '.$str;}
+			if( $this->verbose ){echo $str;}
+			$this->work['procMsgLines'][] = $str;
+			$this->work['procMsgLines'] = array_slice($this->work['procMsgLines'],0,500);
+			$r = $this->proc->save($this->work);
+			if( isset($r['errorDescription']) ){return $r;}
+		}
+		function error($error = []){
+			if( !isset($this->work['procError']) ){$this->work['procError'] = [];}
+			$this->work['procError'] = $error;
+			$this->work['procStatus'] = 'error';
 			$this->proc->save($this->work);
 		}
 	}
