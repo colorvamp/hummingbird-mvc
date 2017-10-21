@@ -328,7 +328,7 @@
 		public $work    = false;
 		public $proc    = false;
 		public $lock    = false;
-		public $vervose = false;
+		public $verbose = false;
 		public $params  = [];
 		public $include = [];
 		public $dependencies = [];
