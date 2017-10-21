@@ -90,7 +90,12 @@
 		}
 		function running(&$proc = []){
 			$proc['procStatus'] = 'running';
-			$r = $this->findAndModify(['_id'=>$proc['_id']],['$set'=>['procStatus'=>'running']]);
+			$proc['pid'] = getmypid();
+			$op = [];
+			$op['$set']['procStatus'] = $proc['procStatus'];
+			$op['$set']['pid'] = $proc['pid'];
+
+			$r = $this->findAndModify(['_id'=>$proc['_id']],$op);
 			return $r;
 		}
 		function finished(&$proc = []){
