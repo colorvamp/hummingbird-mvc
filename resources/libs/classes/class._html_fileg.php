@@ -66,6 +66,10 @@
 				$opts['http']['content'] = $params['put'];
 			}
 			if( isset($params['header']) ){$opts['http']['header'] = $params['header'] + $opts['http']['header'];}
+			
+			if( !empty($params['follow-location']) && is_bool($params['follow-location']) ){
+				$opts['http']['follow_location'] = true;
+			}
 
 			if( $this->proxy ){
 				$auth = base64_encode($this->proxy['user'].':'.$this->proxy['pass']);
