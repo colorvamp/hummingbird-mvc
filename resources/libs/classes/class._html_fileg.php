@@ -97,9 +97,9 @@
 				,'page-header'=>implode("\r\n",$http_response_header)
 				,'page-content'=>$html
 			];
-			if( preg_match('/HTTP\/1\.[0-9]+ (?<code>[0-9]+) (?<msg>[a-zA-Z ]+)/',$return['page-header'],$m) ){
-				$return['page-code'] = $m['code'];
-				$return['page-message'] = $m['msg'];
+			if( preg_match_all('!HTTP/[0-9]+\.[0-9]+ (?<code>[0-9]+) (?<msg>[a-zA-Z ]+)!',$return['page-header'],$m) ){
+				$return['page-code']    = end($m['code']);
+				$return['page-message'] = end($m['msg']);
 			}
 			if( preg_match('![Ll]ocation: (?<url>.*)!i',$return['page-header'],$m) ){
 				$return['page-next'] = trim($m['url']);
