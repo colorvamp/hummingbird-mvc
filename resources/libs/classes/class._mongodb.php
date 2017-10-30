@@ -626,12 +626,13 @@
 					if ( !empty($params['hint']) ) { $options['modifiers'] = [ '$hint' => $params['hint'] ]; }
 					if ( !empty($params['fields']) ) { $options['fields'] = $params['fields']; }
 					while($objectOBs = $this->getWhere($clause,$options)){
-						$skip += $chunk;
 						foreach($objectOBs as $objectOB){
 							$c++;
 							if($bar){$bar($c,$total,$size=30);}
 							$callback($objectOB, $this->client);
 						}
+						$skip += $chunk;
+						$options['limit'] = $skip.','.$chunk;
 					}
 				}else{
 					$options = [];
