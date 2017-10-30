@@ -624,6 +624,7 @@
 					// Query index hinting; using "old style" method until a proper mode is
 					// implemented in the MongoDB PHP driver (https://github.com/mongodb/mongo-php-library/issues/232)
 					if ( !empty($params['hint']) ) { $options['modifiers'] = [ '$hint' => $params['hint'] ]; }
+					if ( !empty($params['fields']) ) { $options['fields'] = $params['fields']; }
 					while($objectOBs = $this->getWhere($clause,$options)){
 						$skip += $chunk;
 						foreach($objectOBs as $objectOB){
