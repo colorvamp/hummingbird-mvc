@@ -626,6 +626,9 @@
 					if ( !empty($params['hint']) ) { $options['modifiers'] = [ '$hint' => $params['hint'] ]; }
 					if ( !empty($params['fields']) ) { $options['fields'] = $params['fields']; }
 					while($objectOBs = $this->getWhere($clause,$options)){
+						if( isset($objectOBs['errorDescription']) ){
+							return $objectOBs;
+						}
 						foreach($objectOBs as $objectOB){
 							$c++;
 							if($bar){$bar($c,$total,$size=30);}
