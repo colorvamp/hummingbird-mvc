@@ -62,6 +62,7 @@
 			$r = shell_exec('/etc/init.d/apache2 restart');
 			break;
 		case 'nginx':
+			//FIXME: averiguar el sock de fpm
 			$domain = '
 				server {
 					listen 443 ssl http2 default_server;
@@ -85,6 +86,7 @@
 					# pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
 					location ~ \.php$ {
 						include snippets/fastcgi-php.conf;
+						fastcgi_pass unix:/run/php/php7.1-fpm.sock;
 					}
 
 					# deny access to .htaccess files, if Apaches document root
