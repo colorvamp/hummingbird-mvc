@@ -204,7 +204,7 @@ echo 11;exit;
 				unlink($file);
 			}
 			$imageOB['imageThumbs'] = [];
-			rmdir($folder);
+			$folder->remove();
 			return $this->_save($imageOB);
 		}
 		function blob_store(&$imageOB = [],$path = '',$params = []){
