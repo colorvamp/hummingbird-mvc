@@ -27,6 +27,17 @@
 			}
 			return $dates;
 		}
+		function _date_range($to = '',$from = ''){
+			if( empty($from) ){$from = date('Y-m-d');}
+			if( $to < $from ){$tmp = $to;$to = $from;$from = $tmp;unset($tmp);}
+			$from  = date('Y-m-d',strtotime('-1 day',strtotime($from)));
+			$dates = [];
+			while( $from < $to ){
+				$from = date('Y-m-d',strtotime('+1 day',strtotime($from)));
+				$dates[] = $from;
+			}
+			return $dates;
+		}
 		function _date_hours(){
 			$hours = range(0,23);
 			foreach( $hours as &$hour ){
@@ -38,6 +49,28 @@
 		function _date_parse($date = ''){
 			if( preg_match('!^([0-9]{4})\-([0-9]{2})\-([0-9]{2})$!',$date,$m) ){
 				return ['year'=>$m[1],'month'=>$m[2],'day'=>$m[3]];
+			}
+			return false;
+		}
+		function _date_is_valid($date = ''){
+			/* Date validation, provide some <date formats> to check if its valid
+			 * Formats supported:
+			 * * (string)'Y-m-d'
+			 * * (string)'Y-m-d|Y-m-d|Y-m-d'
+			 */
+			if( is_string($date)
+			 && preg_match('!^([0-9]{4})\-([0-9]{2})\-([0-9]{2})$!',$date,$m)
+			 && strtotime($date) ){
+				return $date;
+			}
+			if( is_string($date)
+			 && strpos($date,'|') ){
+				$dates = [];
+				$tmp = explode('|',$date);
+				foreach( $tmp as $dte ){
+					if( preg_match('!^([0-9]{4})\-([0-9]{2})\-([0-9]{2})$!',$dte,$m) && strtotime($dte) ){$dates[] = $dte;}
+				}
+				return $dates;
 			}
 			return false;
 		}
