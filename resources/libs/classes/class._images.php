@@ -130,6 +130,7 @@
 
 			if( !file_exists($path) ){
 				$files = glob($folder.'orig.*');
+				if( !$files ){return false;}
 				//FIXME: decidir prioridades mejor
 				$orig  = current($files);
 				$parts_orig = explode('.',$orig);
