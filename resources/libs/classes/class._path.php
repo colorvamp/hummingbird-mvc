@@ -71,6 +71,20 @@
 		function remove(){
 			return $this->_remove($this->path);
 		}
+		function clean(){
+			$this->iterator('*',function($file = ''){unlink($file);});
+		}
+		function _copy($path = '',$avoidCheck = false){
+			$_path = new _path($path);
+
+			foreach( $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->path,RecursiveDirectoryIterator::SKIP_DOTS),RecursiveIteratorIterator::SELF_FIRST) as $item ){
+				if( $item->isDir() ){
+					mkdir($_path.$iterator->getSubPathName());
+					continue;
+				}
+				copy($item,$_path.$iterator->getSubPathName());
+			}
+		}
 		function _remove($path = '',$avoidCheck = false){
 			if( !$avoidCheck ){
 				$path = preg_replace('![/]*$!','/',$path);
