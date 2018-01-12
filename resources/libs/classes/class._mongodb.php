@@ -465,7 +465,12 @@
 			} catch ( MongoDB\Driver\Exception\Exception $e ) {
 				return ['errorCode'=>$e->getCode(),'errorDescription'=>$e->getMessage(),'file'=>__FILE__,'line'=>__LINE__];
 			}
-			$r = current($r->toArray());
+			$r = $r->toArray();
+			/* Normalize different versions, in PHP 7.2 onwards the $r[0] not
+			 * exists anymore, the command returns directly the array of rows */
+			if(  isset($r[0]['result']) && isset($r[0]['ok']) && !isset($r[1]) ){$r = $r[0];}
+			if( !isset($r['result']) ){$r = ['result'=>[]];}
+
 			foreach( $r['result'] as &$row ){
 				$this->_row($row);
 			}
