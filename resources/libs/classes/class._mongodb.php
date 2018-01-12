@@ -469,7 +469,7 @@
 			/* Normalize different versions, in PHP 7.2 onwards the $r[0] not
 			 * exists anymore, the command returns directly the array of rows */
 			if(  isset($r[0]['result']) && isset($r[0]['ok']) && !isset($r[1]) ){$r = $r[0];}
-			if( !isset($r['result']) ){$r = ['result'=>[]];}
+			if( !isset($r['result']) ){$r = ['result'=>$r];}
 
 			foreach( $r['result'] as &$row ){
 				$this->_row($row);
