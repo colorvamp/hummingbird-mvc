@@ -14,7 +14,7 @@
 
 			$last = substr($last,0, -1 * strlen($_name) );
 			if( $exists ){$args[] = $exists;}
-			$this->path = new _path(...$args);
+			$this->path = new _path($last);
 
 			$this->file = $this->path.$_name;
 		}
