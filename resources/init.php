@@ -6,7 +6,7 @@
 	common_setBase('base');
 	if( !function_exists('mb_strlen') ){echo 'Please install php-mbstring'.PHP_EOL;exit;}
 
-	function __autoload( $name ){
+	spl_autoload_register(function( $name ){
 		switch( $name ){
 			/* INI-Databases */
 			case '_mongo':
@@ -33,4 +33,4 @@
 			case '_shoutbox_sqlite3':	include('classes/class._shoutbox.sqlite3.php');break;
 				
 		}
-	}
+	});
