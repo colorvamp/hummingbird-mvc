@@ -40,6 +40,12 @@
 				$this->fp = false;
 			}
 		}
+		function exists(){
+			if( !file_exists($this->file) ){
+				return false;
+			}
+			return true;
+		}
 		function stat(){
 			if( !file_exists($this->file) ){
 				return false;
@@ -82,5 +88,14 @@
 		function iterator($glob = '*',$callback = false,$params = []){
 			if( !$this->_open() ){return ['errorDescription'=>'FILE_ERROR','file'=>__FILE__,'line'=>__LINE__];}
 			//FIXME: TODO
+		}
+		function save($blob = '',$params = []){
+			return file_put_contents($this->file,$blob);
+		}
+		function dump(){
+			if( !file_exists($this->file) ){
+				return false;
+			}
+			return file_get_contents($this->file);
 		}
 	}
