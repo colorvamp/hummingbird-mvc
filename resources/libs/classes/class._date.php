@@ -72,8 +72,21 @@
 			return $hours;
 		}
 		function _date_parse($date = ''){
-			if( preg_match('!^([0-9]{4})\-([0-9]{2})\-([0-9]{2})$!',$date,$m) ){
-				return ['year'=>$m[1],'month'=>$m[2],'day'=>$m[3]];
+			if( preg_match('!^([0-9]{4})\-([0-9]{2})\-([0-9]{2})( ([0-9]{2}):([0-9]{2}):([0-9]{2})|)$!',$date,$m) ){
+				$return = [
+					 'year'=>$m[1]
+					,'month'=>$m[2]
+					,'day'=>$m[3]
+				];
+				if( isset($m[4]) ){
+					$return += [
+						 'hour'=>$m[5]
+						,'minute'=>$m[6]
+						,'second'=>$m[7]
+					];
+				}
+
+				return $return;
 			}
 			return false;
 		}
