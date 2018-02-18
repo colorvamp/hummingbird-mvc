@@ -69,6 +69,49 @@
 		}
 	};
 
+	function $ajax(url,params){
+		return new Promise(function (resolve, reject) {
+			var method = 'GET';
+			var rnd = Math.floor(Math.random() * 10000);
+		
+			var postdata = false;
+			if( params && !params._data && !params._cache ){
+				params = {'_data':params};
+			}
+			if( params._data ){
+				method = 'POST';
+				switch( true ){
+					case ($is.object(params._data)):postdata = new FormData();for( var a in params._data ){postdata.append(a,params._data[a]);}break;
+					case ($is.element(params._data) && params._data.tagName && params._data.tagName == 'FORM'):postdata = new postdata(params._data);break;
+					default:postdata = params._data;
+				}
+			}
+			if( !params._cache ){
+				url += ( url.indexOf('?') > 0 ? '&' : '?' ) + 'rnd=' + rnd;
+			}
+
+			var xhr = new XMLHttpRequest();
+			xhr.open(method,url,true);
+			if( !params._binary ){
+				xhr.onreadystatechange = function(){
+					if( xhr.readyState == XMLHttpRequest.DONE ){
+						return resolve(xhr.responseText);
+					}
+				};
+				xhr.onload = function(){
+					return resolve(xhr.responseText,xhr.getAllResponseHeaders());
+				};
+			}else{
+				xhr.responseType = 'arraybuffer';
+				xhr.onload = function(){
+					return resolve(xhr.response,xhr.getAllResponseHeaders());
+				};
+			}
+			//if(!$is.formData(postdata)){xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');//}
+			xhr.send(postdata);
+		});
+	}
+
 	function print_r(obj,i){
 		var s="";if(!i){i = "    ";}else{i += "    ";}
 		if(obj.constructor == Array || obj.constructor == Object){
