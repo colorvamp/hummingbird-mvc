@@ -27,6 +27,31 @@
 			}
 			return $dates;
 		}
+		function _date_hours_between($to = '',$from = ''){
+			if( empty($from) ){$from = date('Y-m-d H:00:00');}
+			if( $to < $from ){$tmp = $to;$to = $from;$from = $tmp;unset($tmp);}
+			if( preg_match('!^[0-9]+$!',$from) ){$from = '@'.$from;}
+			if( preg_match('!^[0-9]+$!',$to)   ){$to = '@'.$to;}
+			$timezone = date_default_timezone_get();
+			$datetimezone = new DateTimeZone($timezone);
+
+			$date1 = new DateTime($from,$datetimezone);
+			$date2 = new DateTime($to,$datetimezone);
+			$date1->setTimezone($datetimezone);
+			$date2->setTimezone($datetimezone);
+			$interval = new DateInterval('PT1H');
+
+			$dates = [];
+			/* create periods every hour between the two dates */
+			$periods = new DatePeriod($date1, $interval, $date2);
+			foreach( $periods as $period ){
+				$period->setTimezone($datetimezone);
+				$dates[] = $period->format('Y-m-d H:i:s');
+			}
+
+			$dates[] = $date2->format('Y-m-d H:i:s');
+			return $dates;
+		}
 		function _date_range($to = '',$from = ''){
 			if( empty($from) ){$from = date('Y-m-d');}
 			if( $to < $from ){$tmp = $to;$to = $from;$from = $tmp;unset($tmp);}
