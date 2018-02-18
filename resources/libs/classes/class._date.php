@@ -78,7 +78,7 @@
 					,'month'=>$m[2]
 					,'day'=>$m[3]
 				];
-				if( isset($m[4]) ){
+				if( !empty($m[4]) ){
 					$return += [
 						 'hour'=>$m[5]
 						,'minute'=>$m[6]
