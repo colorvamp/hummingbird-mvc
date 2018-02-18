@@ -36,6 +36,38 @@
 			try{return JSON.parse(str.trim());}catch(err){return {errorDescription:str};}
 		}
 	};
+	var $form = {
+		parse: function(f,e){
+			/* f = formElement, e = encode */
+			var ops = {};
+			$A(f.querySelectorAll('input,textarea,select'))
+			 .each(function(el){
+				o = ops;
+				p = ops;
+				if( el.name.indexOf('[') > -1 ){
+					path = el.name.split('[');
+					do{
+						if( o === undefined ){return false;}
+						stone = path.shift();
+						if( stone.substring(stone.length - 1) == ']' ){stone = stone.substring(0,stone.length - 1);}
+						if( !o.hasOwnProperty(stone) ){o[stone] = {};}
+						p = o;
+						o = o[stone];
+					}while( path.length );
+				}else{
+					stone = el.name;
+					if( !o.hasOwnProperty(stone) ){o[stone] = {};}
+					p = o;
+					o = o[stone];
+				}
+				if( el.type == 'checkbox' ){p[stone] = !!el.checked;return;}
+				if( el.type == 'radio' && !el.checked ){return;}
+				p[stone] = (!e) ? el.value : encodeURIComponent(el.value);
+				return;
+			});
+			return ops;
+		}
+	};
 
 	function print_r(obj,i){
 		var s="";if(!i){i = "    ";}else{i += "    ";}
