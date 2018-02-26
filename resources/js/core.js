@@ -23,7 +23,7 @@
 		}
 	}
 	var $is = {
-		set:	  function(o,path){
+		set:	  function (o,path) {
 			var stone;
 			path = path || '';
 			if( path.indexOf('[') !== -1 ){throw new Error('Unsupported object path notation.');}
@@ -41,12 +41,12 @@
 			if( $is.object(o) ){for( var key in o ){if( hasOwnProperty.call(obj, key) ){return false;}}return true;}
 			return false;
 		},
-		array:    function(o){return (Array.isArray(o) || $type(o.length) === 'number');},
-		string:   function(o){return (typeof o == 'string' || o instanceof String);},
-		object:   function(o){return (o.constructor.toString().indexOf('function Object()') == 0);},
-		element:  function(o){return ('nodeType' in o && o.nodeType === 1 && 'cloneNode' in o);},
-		function: function(o){return (o.constructor.toString().indexOf('function Function()') == 0);},
-		formData: function(o){return (o.constructor.toString().indexOf('function FormData()') == 0);}
+		array:    function (o) {return (Array.isArray(o) || $type(o.length) === 'number');},
+		string:   function (o) {return (typeof o == 'string' || o instanceof String);},
+		object:   function (o) {return (o.constructor.toString().indexOf('function Object()') == 0);},
+		element:  function (o) {return ('nodeType' in o && o.nodeType === 1 && 'cloneNode' in o);},
+		function: function (o) {return (o.constructor.toString().indexOf('function Function()') == 0);},
+		formData: function (o) {return (o.constructor.toString().indexOf('function FormData()') == 0);}
 	};
 	var $json = {
 		encode: function(obj){if(JSON.stringify){return JSON.stringify(obj);}},
@@ -60,39 +60,53 @@
 		}
 	};
 	var $form = {
-		parse: function(f,e){
+		parse: function (f,e) {
 			/* f = formElement, e = encode */
 			var ops = {};
-			$A(f.querySelectorAll('input,textarea,select'))
-			 .each(function(el){
+			f.querySelectorAll('input,textarea,select')
+			 .forEach( function (el) {
 				o = ops;
 				p = ops;
-				if( el.name.indexOf('[') > -1 ){
+				if (el.name.indexOf('[') > -1) {
 					path = el.name.split('[');
 					do{
-						if( o === undefined ){return false;}
+						if (o === undefined){ return false; }
 						stone = path.shift();
-						if( stone.substring(stone.length - 1) == ']' ){stone = stone.substring(0,stone.length - 1);}
-						if( !o.hasOwnProperty(stone) ){o[stone] = {};}
+						if (stone.substring(stone.length - 1) == ']') {stone = stone.substring(0,stone.length - 1);}
+						if (!o.hasOwnProperty(stone)) {o[stone] = {};}
 						p = o;
 						o = o[stone];
 					}while( path.length );
 				}else{
 					stone = el.name;
-					if( !o.hasOwnProperty(stone) ){o[stone] = {};}
+					if (!o.hasOwnProperty(stone)) {o[stone] = {};}
 					p = o;
 					o = o[stone];
 				}
-				if( el.type == 'checkbox' ){p[stone] = !!el.checked;return;}
-				if( el.type == 'radio' && !el.checked ){return;}
+				if (el.type == 'checkbox') {p[stone] = !!el.checked;return;}
+				if (el.type == 'radio' && !el.checked) {return;}
 				p[stone] = (!e) ? el.value : encodeURIComponent(el.value);
 				return;
-			});
+			} );
 			return ops;
 		}
 	};
+	function $uniqid (a = "",b = false) {
+		var c = Date.now()/1000;
+		var d = c.toString(16).split(".").join("");
+		while (d.length < 14) {
+			d += "0";
+		}
+		var e = "";
+		if (b) {
+			e = ".";
+			var f = Math.round(Math.random()*100000000);
+			e += f;
+		}
+		return a + d + e;
+	}
 
-	function $ajax(url,params){
+	function $ajax (url,params) {
 		return new Promise(function (resolve, reject) {
 			var method = 'GET';
 			var rnd = Math.floor(Math.random() * 10000);
@@ -135,7 +149,7 @@
 		});
 	}
 
-	function print_r(obj,i){
+	function print_r (obj,i) {
 		var s="";if(!i){i = "    ";}else{i += "    ";}
 		if(obj.constructor == Array || obj.constructor == Object){
 			for(var p in obj){
@@ -147,4 +161,13 @@
 			}
 		}
 		return s;
+	}
+
+	if (window.NodeList && !NodeList.prototype.forEach) {
+		NodeList.prototype.forEach = function (callback, thisArg) {
+			thisArg = thisArg || window;
+			for (var i = 0; i < this.length; i++) {
+				callback.call(thisArg, this[i], i, this);
+			}
+		};
 	}
