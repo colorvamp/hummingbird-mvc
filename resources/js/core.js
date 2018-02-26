@@ -1,4 +1,27 @@
-
+	var $E = {
+		parent: {
+			find: function(elem,p){/* p = {tagName:false,className:false} */if(p.tagName){p.tagName = p.tagName.toUpperCase();}if(p.className){p.className = new RegExp('( |^)'+p.className+'( |$)');}while(elem.parentNode && ((p.tagName && elem.tagName!=p.tagName) || (p.className && !elem.className.match(p.className)))){elem = elem.parentNode;}if(!elem.parentNode){return false;}return $fix(elem);},
+			match: function(elem,m){
+				while( elem.parentNode && (!elem.matches || !elem.matches(m)) ){elem = elem.parentNode;}
+				return ( elem.parentNode ) ? elem : false;
+			}
+		},
+		child: {
+			number: function(elem){
+				/* Get numeric position of a child inside his parent */
+				return Array.prototype.indexOf.call(elem.parentNode.childNodes,elem);
+			}
+		},
+		style: {
+			apply: function(elem,style){
+				for( var o in style ){
+					if( o.indexOf('.') == 0 ){elem.style[o.replace(/^./,'')] = style[o];continue;}
+					elem[o] = style[o];
+				}
+				return elem;
+			}
+		}
+	}
 	var $is = {
 		set:	  function(o,path){
 			var stone;
