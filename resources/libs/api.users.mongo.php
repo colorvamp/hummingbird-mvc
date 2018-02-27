@@ -31,7 +31,7 @@
 		public $search_fields = ['userName'];
 		public $reg_mail_clear = '/[^a-z0-9\._\+\-\@]*/';
 		public $reg_mail_match = '/^[a-z0-9\._\+\-]+@[a-z0-9\.\-]+\.[a-z]{2,6}$/';
-		function validate (&$data = [],&$oldData = []) {
+		function validate(&$data = [],&$oldData = []){
 			if( isset($data['userSalt']) && !$data['userSalt'] ){unset($data['userSalt']);}
 			if( isset($data['userCode']) && !$data['userCode'] ){unset($data['userCode']);}
 
@@ -62,7 +62,7 @@
 			}
 			return $data;
 		}
-		function login ($userOB = false,$userPass = '') {
+		function login($userOB = false,$userPass = ''){
 			if( is_string($userOB) && strpos($userOB,'@') ){
 				if( !($userOB = $this->getByMail($userOB)) ){
 					return ['errorDescription'=>'USER_ERROR','file'=>__FILE__,'line'=>__LINE__];
@@ -84,23 +84,23 @@
 
 			return $this->impersonate($userOB);
 		}
-		function logout () {
+		function logout(){
 			session_destroy();
 			setcookie('u','',-1,'/');
 		}
-		function getByMail ($mail = '',$params = []) {
+		function getByMail($mail = '',$params = []){
 			return $this->getSingle(['userMail'=>$mail],$params);
 		}
-		function removeByID ($id = false,$params = []) {
+		function removeByID($id = false,$params = []){
 			$userOB = $this->getByID($id);
 
 			return $this->_removeByID($id,$params);
 		}
-		function removeWhere ($clause = [],$params = []) {
-//FIXME: iterar sobre removeByID
+		function removeWhere($clause = [],$params = []){
+			//FIXME: iterar sobre removeByID
 			return $this->_removeWhere($clause,$params);
 		}
-		function impersonate ($userOB = []) {
+		function impersonate($userOB = []){
 			if( empty($userOB['_id']) ){return false;}
 			if( !session_id() ){session_start();}
 			reset($userOB['userCode']);
@@ -109,16 +109,16 @@
 			$this->findAndModify(['_id'=>$userOB['_id']],['$set'=>['userIP'=>$_SERVER['REMOTE_ADDR']]],['_id'=>true]);
 			return $userOB;
 		}
-		function generateCode ($userMail = '') {
+		function generateCode($userMail = ''){
 			return sha1($userMail.time().date('Y-m-d H:i:s'));
 		}
-		function generateSalt () {
+		function generateSalt(){
 			$pass_a = ['?','$','¿','!','¡','{','}'];
 		    	$pass_b = ['a','e','i','o','u','b','c','d','f','g','h','j','k','l','m','n','p','q','r','s','t','v','w','x','y','z'];
 			$salt = '';for($a=0; $a<4; $a++){$salt .= $pass_a[array_rand($pass_a)];$salt .= $pass_b[array_rand($pass_b)];}
 			return $salt;
 		}
-		function isLogged () {
+		function isLogged(){
 			if( isset($GLOBALS['user']) && is_array($GLOBALS['user']) ){return true;}
 			if( isset($_SESSION['user']) && is_array($_SESSION['user']) ){$GLOBALS['user'] = $_SESSION['user'];return true;}
 			if( isset($_COOKIE['u']) && strlen($_COOKIE['u']) == 40 ){
@@ -131,11 +131,11 @@
 			}
 			return false;
 		}
-		function checkModes ($mode = '',$userOB = []) {
+		function checkModes($mode = '',$userOB = []){
 			if( isset($GLOBALS['user']) && !$userOB ){$userOB = $GLOBALS['user'];}
 			if( !isset($userOB['userModes']) ){return false;}
 			if(  isset($userOB['userModes'][$mode]) ){return true;}
-			/* El campo no se podía indexar en mongo, asique hay que buscar en los valores */
+			/* This field was not possible to index in mongo, so we need to search for values */
 			return (array_search($mode,$userOB['userModes']) !== false);
 		}
 	}
