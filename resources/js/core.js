@@ -1,21 +1,31 @@
 	var $E = {
 		parent: {
-			find: function(elem,p){/* p = {tagName:false,className:false} */if(p.tagName){p.tagName = p.tagName.toUpperCase();}if(p.className){p.className = new RegExp('( |^)'+p.className+'( |$)');}while(elem.parentNode && ((p.tagName && elem.tagName!=p.tagName) || (p.className && !elem.className.match(p.className)))){elem = elem.parentNode;}if(!elem.parentNode){return false;}return $fix(elem);},
-			match: function(elem,m){
-				while( elem.parentNode && (!elem.matches || !elem.matches(m)) ){elem = elem.parentNode;}
-				return ( elem.parentNode ) ? elem : false;
+			find: function (elem,p) {
+				/* p = {tagName:false,className:false} */
+				if (p.tagName) {p.tagName = p.tagName.toUpperCase();}
+				if (p.className) {p.className = new RegExp('( |^)'+p.className+'( |$)');}
+				while (elem.parentNode && ((p.tagName && elem.tagName!=p.tagName) || (p.className && !elem.className.match(p.className)))) {elem = elem.parentNode;}
+				if (!elem.parentNode) {return false;}
+				return elem;
+			},
+			match: function (elem,m) {
+				while (elem.parentNode && (!elem.matches || !elem.matches(m))) {elem = elem.parentNode;}
+				return (elem.parentNode) ? elem : false;
 			}
 		},
 		child: {
-			number: function(elem){
+			number: function (elem) {
 				/* Get numeric position of a child inside his parent */
 				return Array.prototype.indexOf.call(elem.parentNode.childNodes,elem);
 			}
 		},
 		style: {
-			apply: function(elem,style){
-				for( var o in style ){
-					if( o.indexOf('.') == 0 ){elem.style[o.replace(/^./,'')] = style[o];continue;}
+			apply: function (elem,style) {
+				for (var o in style) {
+					if (o.indexOf('.') == 0) {
+						elem.style[o.replace(/^./,'')] = style[o];
+						continue;
+					}
 					elem[o] = style[o];
 				}
 				return elem;
@@ -49,13 +59,13 @@
 		formData: function (o) {return (o.constructor.toString().indexOf('function FormData()') == 0);}
 	};
 	var $json = {
-		encode: function(obj){if(JSON.stringify){return JSON.stringify(obj);}},
-		decode: function(str){
-			if($is.empty(str)){return {errorDescription:"La cadena estÃ¡ vacÃ­a, revise la API o el COMANDO"};}
-			if(!$is.string(str)){return {errorDescription:'JSON_ERROR'};}
+		encode: function (obj) {if (JSON.stringify) {return JSON.stringify(obj);}},
+		decode: function (str) {
+			if ($is.empty(str)) {return {errorDescription:"La cadena estÃ¡ vacÃ­a, revise la API o el COMANDO"};}
+			if (!$is.string(str)) {return {errorDescription:'JSON_ERROR'};}
 			str = str.trim();
-			if(str.match("<title>404 Not Found</title>")){return {errorDescription:"La URL de la API es errÃ³nea: 404"};}
-			if(!JSON || !JSON.parse){return eval('('+str+')');}
+			if (str.match("<title>404 Not Found</title>")) {return {errorDescription:"La URL de la API es errÃ³nea: 404"};}
+			if (!JSON || !JSON.parse) {return eval('('+str+')');}
 			try{return JSON.parse(str.trim());}catch(err){return {errorDescription:str};}
 		}
 	};
