@@ -136,7 +136,7 @@
 		}
 		function _header($header = []){
 			$h = '';
-			foreach( $header as $k=>$v ){$h .= $k.': '.$v."\r\n";}
+			foreach ($header as $k=>$v) {$h .= $k.': '.trim($v)."\r\n";}
 			return trim($h);
 		}
 	}
