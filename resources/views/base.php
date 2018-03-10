@@ -17,9 +17,13 @@
 <body>
 	<header>
 		<div class="container">
-			<a href="{{w.indexURL}}"><img src="{{w.indexURL}}/r/images/logo.png" alt="ColorVamp" title="ColorVamp"/></a>
-			<h1><a href="{{w.indexURL}}">{{HTML.TITLE}}</a></h1>
-			<h6>{{HTML.DESCRIPTION}}</h6>
+			<ul class="navigation">
+				<li><h1>HummingBird</h1></li>
+				<li><a href="{{w.indexURL}}/redfox">Admin Panel</a></li>
+			</ul>
+			<div class="presentation">
+				Hi!
+			</div>
 			<ul class="tabs">
 				<li class="tab {{#main.section.main}}active{{/main.section.main}}"><a class="label" href="{{w.indexURL}}"><i class="fa fa-circle-o" aria-hidden="true"></i> Main</a></li>
 				<li class="tab {{#main.section.widgets}}active{{/main.section.widgets}}"><a class="label" href="{{w.indexURL}}/widgets"><i class="fa fa-puzzle-piece" aria-hidden="true"></i> Widgets</a></li>

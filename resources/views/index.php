@@ -1,6 +1,6 @@
 	<div class="wrapper">
-		{{permission.warning}}
 		<section>
-			<h2>Welcome to Hummingbird</h2>
+			<h2>One framework, many projects</h2>
+			<p>HummingBird is a lightweight framework ready for building your projects.</p>
 		</section>
 	</div>

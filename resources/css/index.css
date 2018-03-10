@@ -6,6 +6,9 @@ select::-moz-focus-inner{border:0;padding:0;}
 input[type=range]::-moz-focus-outer{border:0;}
 a{color:#7f99ca;text-decoration:none;}
 a:hover{color:#8cb8e8;border-bottom:0;}
+h1,h2,h3{color:#3A4763;font-weight:normal;}
+h2{font-size:2rem;margin:10px 0;}
+p{font-size:1.1rem;}
 ul{list-style:none;}
 
 .hidden.hidden.hidden{display:none;}
@@ -15,7 +18,15 @@ ul{list-style:none;}
 .inline-block{display:inline-block;}
 
 body > * > .container{width:1000px;margin:auto;}
-body > header{background:linear-gradient(to top,#dddddd 0,#dddddd .9px,#fafbfc 1px);}
+body > header{
+	background:#f6f9f7;
+	
+}
+body > header ul.navigation{display:flex;padding:10px 0;}
+body > header ul.navigation > li{display:inline-block;}
+body > header ul.navigation > li + li{padding-left:20px;}
+body > header .presentation{min-height:200px;}
+body > header h1{color:#3A4763;font-size:1.1rem;}
 body > main{padding-top:20px;}
 
 /* INI-node */

@@ -1,12 +1,12 @@
 <?php
-	function assis_main(){
-		common_setPath('../views/assis/');
+	function redfox_main(){
+		common_setPath('../views/redfox/');
 		common_setBase('base');
 
 		$params = implode('/',func_get_args());
-		$controllersBase = '../controllers/assis/';
-		$GLOBALS['w.assisURL']   = $GLOBALS['w.indexURL'].'/assis';
-		$GLOBALS['TEMPLATE']['w.assisURL']   = $GLOBALS['w.assisURL'];
+		$controllersBase = '../controllers/redfox/';
+		$GLOBALS['w.redfoxURL'] = $GLOBALS['w.indexURL'].'/redfox';
+		$GLOBALS['TEMPLATE']['w.redfoxURL'] = $GLOBALS['w.redfoxURL'];
 
 		/* INI-dispatcher */
 		do{
