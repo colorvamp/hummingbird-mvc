@@ -20,7 +20,25 @@
 			}
 		},
 		style: {
-			apply: function (elem,style) {
+			get: function(elem,style){
+				var value = false;
+				if ($is.string(style)) {
+					/* If style is a string, we should return the current value for 
+					 * this style */
+					if (elem.currentStyle) {
+						value = elem.currentStyle[style];
+						return value.replace(/px$/,'');
+					}
+					if (window.getComputedStyle) {
+						value = window.getComputedStyle(elem,null).getPropertyValue(style);
+						return value.replace(/px$/,'');
+					}
+					return value;
+				}
+				return value;
+			},
+			apply: function(elem,style){
+				/* If style is and object we should apply styles */
 				for (var o in style) {
 					if (o.indexOf('.') == 0) {
 						elem.style[o.replace(/^./,'')] = style[o];
