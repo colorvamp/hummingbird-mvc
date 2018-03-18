@@ -27,7 +27,7 @@
 	/* END-Mobile detection */
 
 	$params = parse_url($_SERVER['REQUEST_URI']);
-	$params = $params['path'];
+	$params = $params['path'] ?? '';
 
 	/* INI-loading resources */
 	if (preg_match('/(css|js|images|fonts)\/.*?\.([a-z]{2,4}$)/',$params,$m)) {
