@@ -30,6 +30,9 @@
 			case  '_zip':
 				if( !class_exists('ZipArchive') ){echo 'Please install php-zip'.PHP_EOL;exit;}
 				include('classes/class._zip.php');break;
+				
+			case '_google':		include('classes/class._google.php');break;
+			case '_google_gmail':	include('classes/google/class._google_gmail.php');break;
 
 			case '_shoutbox_sqlite3':	include('classes/class._shoutbox.sqlite3.php');break;
 				
