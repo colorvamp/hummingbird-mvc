@@ -9,13 +9,17 @@
 			/* args variables -> (':rooms','17591','17-03-2015',true) */
 			$exists = false;
 			$last = array_pop($args);
-			if( is_bool($last) ){$exists = array_pop($args);}
-			if( !preg_match('![^/]+$!',$last,$_name) ){return false;}
+			if (is_bool($last)) {
+				$exists = $last;
+				$last = array_pop($args);
+			}
+			if (!preg_match('![^/]+$!',$last,$_name)) {return false;}
 			$this->name = $_name[0];
 
 			$last = substr($last,0, -1 * strlen($this->name) );
-			if( $exists ){$args[] = $exists;}
-			$this->path = new _path($last);
+			if ($last)   {$args[] = $last;}
+			if ($exists) {$args[] = $exists;}
+			$this->path = new _path(...$args);
 
 			$this->file = $this->path.$this->name;
 		}
