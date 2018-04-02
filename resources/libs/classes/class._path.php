@@ -68,6 +68,9 @@
 			}
 			return $r;
 		}
+		function copy($path = ''){
+			return $this->_copy($path);
+		}
 		function remove(){
 			return $this->_remove($this->path);
 		}
@@ -77,13 +80,16 @@
 		function _copy($path = '',$avoidCheck = false){
 			$_path = new _path($path);
 
-			foreach( $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->path,RecursiveDirectoryIterator::SKIP_DOTS),RecursiveIteratorIterator::SELF_FIRST) as $item ){
-				if( $item->isDir() ){
-					mkdir($_path.$iterator->getSubPathName());
+			foreach ($iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->path,RecursiveDirectoryIterator::SKIP_DOTS),RecursiveIteratorIterator::SELF_FIRST) as $item) {
+				if ($item->isDir()) {
+					$r = mkdir($_path.$iterator->getSubPathName());
+					if (empty($r)) {return $r;}
 					continue;
 				}
-				copy($item,$_path.$iterator->getSubPathName());
+				$r = copy($item,$_path.$iterator->getSubPathName());
+				if (empty($r)) {return $r;}
 			}
+			return true;
 		}
 		function _remove($path = '',$avoidCheck = false){
 			if( !$avoidCheck ){
