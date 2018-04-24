@@ -710,7 +710,11 @@
 			if( !$this->search_fields ){return [];}
 			if( !isset($params['fields']) ){$params['fields'] = [];}
 			$limitRows = 500;if(isset($params['row.limit'])){$limitRows = $params['row.limit'];}
-			$match = false;if(isset($params['match'])){$match = $this->_clause($params['match']);}
+			$match = false;
+			if (!empty($params['match'])) {
+				$this->_clause($params['match']);
+				$match = $params['match'];
+			}
 
 			$words = explode(' ',$criteria);
 			$countWords = count($words);
