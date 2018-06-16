@@ -135,6 +135,7 @@
 	}
 
 	function $ajax (url,params) {
+		if (!params) {params = {};}
 		return new Promise(function (resolve, reject) {
 			var method = 'GET';
 			var rnd = Math.floor(Math.random() * 10000);
