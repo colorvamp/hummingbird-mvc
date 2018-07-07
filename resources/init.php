@@ -21,6 +21,8 @@
 
 			case  '_html_fileg':
 			case '__html_fileg':	include('classes/class._html_fileg.php');break;
+			case  '_html_curl':
+			case '__html_curl':	include('classes/class._html_curl.php');break;
 			case '__strings':	include('inc.strings.php');break;
 			case  '_date':
 			case '__date':		include('classes/class._date.php');break;
