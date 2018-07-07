@@ -71,9 +71,11 @@
 				$opts['http']['follow_location'] = true;
 			}
 
-			if( $this->proxy ){
-				$auth = base64_encode($this->proxy['user'].':'.$this->proxy['pass']);
-				$opts['http']['header']['proxy-authorization'] = 'Basic '.$auth;
+			if ($this->proxy) {
+				if (!empty($this->proxy['user'])) {
+					$auth = base64_encode($this->proxy['user'].':'.$this->proxy['pass']);
+					$opts['http']['header']['proxy-authorization'] = 'Basic '.$auth;
+				}
 				$opts['http']['proxy'] = 'tcp://'.$this->proxy['host'].':'.$this->proxy['port'];
 			}
 
