@@ -427,7 +427,6 @@
 		function _updateWhere($clause = [],$data = [],$params = []){
 			$r = $this->collection_get();
 			if( is_array($r) && isset($r['errorDescription']) ){return $r;}
-			$this->_clause($clause);
 
 			if( !isset($data['$set'])
 			 && !isset($data['$inc'])
