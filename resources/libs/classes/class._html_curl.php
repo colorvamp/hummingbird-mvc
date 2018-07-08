@@ -83,7 +83,13 @@
 			});
 
 			$html = curl_exec($ch);
-			if (!$html) {return ['errorDescription'=>curl_error($ch),'file'=>__FILE__,'line'=>__LINE__];}
+			if (!$html) {
+				$error = curl_error($ch);
+				if (preg_match('!Operation timed out after [0-9]+ milliseconds with [0-9]+ bytes received!',$error)) {
+					$error = 'TIMEOUT';
+				}
+				return ['errorDescription'=>$error,'file'=>__FILE__,'line'=>__LINE__];
+			}
 			if (isset($data['debug'])) {print_r(curl_getinfo($ch));}
 
 			$return = [
