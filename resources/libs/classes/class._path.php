@@ -38,6 +38,9 @@
 		function realPath(){
 			return realpath($this->path).'/';
 		}
+		function is_writable(){
+			return is_writable($this->path);
+		}
 		function checkBase($base = ''){
 			if( ($base = realpath($base)) === false ){return false;}
 			$path = realpath($this->path);
