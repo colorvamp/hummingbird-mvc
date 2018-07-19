@@ -32,3 +32,10 @@
 		return common_renderTemplate('widgets/scroll');
 	}
 
+	function widgets_transitions(){
+		global $TEMPLATE;
+
+		$TEMPLATE['JS.WIDGETS'] = true;
+		$TEMPLATE['PAGE.TITLE'] = 'widgets - transitions';
+		return common_renderTemplate('widgets/transitions');
+	}

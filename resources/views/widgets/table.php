@@ -37,7 +37,7 @@
 							</div>
 							<p>
 <code>var _table = document.querySelector('#table-test-1');
-var _event = new CustomEvent('widget-item-add',{'detail':{'item':{'columns':['column1','column2','column3']};
+var _event = new CustomEvent('widget-item-add',{'detail':{'item':{'columns':['column1','column2','column3']}},'bubbles':true,'cancelable':true});
 _table.dispatchEvent(_event);
 </code>
 							</p>
