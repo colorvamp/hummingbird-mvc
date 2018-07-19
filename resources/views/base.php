@@ -10,33 +10,24 @@
 	<link href="{{w.indexURL}}/r/css/index.css" rel="stylesheet"/>
 	<link href="{{w.indexURL}}/r/css/font-awesome.min.css" rel="stylesheet"/>
 	{{#JS.WIDGETS}}
-	<script type="text/javascript" src="{{w.indexURL}}/r/js/widgets/widget.list.js"></script>
-	<script type="text/javascript" src="{{w.indexURL}}/r/js/widgets/widget.scroll.js"></script>
+	<script async type="text/javascript" src="{{w.indexURL}}/r/js/widgets/widgets.js"></script>
+	<script async type="text/javascript" src="{{w.indexURL}}/r/js/widgets/widget.table.js"></script>
+	<script async type="text/javascript" src="{{w.indexURL}}/r/js/widgets/widget.list.js"></script>
+	<script async type="text/javascript" src="{{w.indexURL}}/r/js/widgets/widget.scroll.js"></script>
 	{{/JS.WIDGETS}}
 </head>
 <body>
-	<header>
-		<div class="container">
+	<div class="menu-top">
+		<div class="inner">
 			<ul class="navigation">
-				<li><h1>HummingBird</h1></li>
+				<li><strong>HummingBird</strong></li>
 				<li><a href="{{w.indexURL}}/redfox">Admin Panel</a></li>
 			</ul>
-			<div class="presentation">
-				Hi!
-			</div>
-			<ul class="tabs">
-				<li class="tab {{#main.section.main}}active{{/main.section.main}}"><a class="label" href="{{w.indexURL}}"><i class="fa fa-circle-o" aria-hidden="true"></i> Main</a></li>
-				<li class="tab {{#main.section.widgets}}active{{/main.section.widgets}}"><a class="label" href="{{w.indexURL}}/widgets"><i class="fa fa-puzzle-piece" aria-hidden="true"></i> Widgets</a></li>
-				<li class="tab {{#main.section.shoutbox}}active{{/main.section.shoutbox}}"><a class="label" href="{{w.indexURL}}/shoutbox"><i class="fa fa-bullhorn" aria-hidden="true"></i> Shoutbox</a></li>
-				<li class="tab"><span class="label">Options</span></li>
-			</ul>
 		</div>
+	</div>
+	<header>
 	</header>
-	<main>
-		<div class="container">
-			{{MAIN}}
-		</div>
-	</main>
+	<main>{{MAIN}}</main>
 	<footer>
 		<div class="container">
 

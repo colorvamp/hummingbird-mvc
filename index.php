@@ -1,8 +1,8 @@
 <?php
 	error_reporting(E_STRICT | E_ALL);
-	$GLOBALS['w.localhost'] = $_SERVER['SERVER_NAME'] == 'localhost';
-	if( substr($_SERVER['SERVER_NAME'],0,7) == '192.168'
-	 || (!empty($_SERVER['SERVER_ADDR']) && $_SERVER['SERVER_ADDR'] == '127.0.0.1') ){$GLOBALS['w.localhost'] = true;}
+	$GLOBALS['w.localhost'] = $_SERVER['SERVER_NAME'] == 'localhost'
+		|| substr($_SERVER['SERVER_NAME'],0,7) == '192.168'
+		|| (!empty($_SERVER['SERVER_ADDR']) && $_SERVER['SERVER_ADDR'] == '127.0.0.1');
 
 	$protocol = 'http';
 	if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') {
@@ -23,7 +23,6 @@
 			$GLOBALS['w.isMobile'] = false;
 		}
 	}
-	//FIXME: more cases ...
 	/* END-Mobile detection */
 
 	$params = parse_url($_SERVER['REQUEST_URI']);

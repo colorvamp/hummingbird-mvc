@@ -8,6 +8,14 @@
 		return common_renderTemplate('widgets/main');
 	}
 
+	function widgets_table(){
+		global $TEMPLATE;
+
+		$TEMPLATE['JS.WIDGETS'] = true;
+		$TEMPLATE['PAGE.TITLE'] = 'widgets - table';
+		return common_renderTemplate('widgets/table');
+	}
+
 	function widgets_list(){
 		global $TEMPLATE;
 
