@@ -61,6 +61,26 @@ section{
 }
 section h2{font-weight:normal;}
 
+code {
+	font-family: Consolas,Monaco,"Lucida Console",monospace;
+	background-color: #3d4145;
+	border: none;
+	color: #d2d5dc;
+	width: 100%;
+	display: block;
+	position: relative;
+	padding: 28px 30px;
+	display: inline-block;
+	margin: 10px 0 0;
+	overflow: hidden;
+	border-radius: 3px;
+	white-space: pre;
+	word-break: break-word;
+	word-wrap: break-word;
+	overflow: hidden;
+	width: 100%;
+}
+
 /* INI-Grid */
 .grid{display:flex;margin:0 -8px 0 -8px;}
 .grid > .row{display:flex;width:100%;flex-flow:row wrap;}
@@ -175,8 +195,8 @@ ul.table > li.disabled > div > img{opacity:.3;}
 ul.table > li.disabled > div > div.node > .image{opacity:.3;}
 ul.table > li.hidden{display:none;}
 ul.table > li.header{background:#f4f7f8;box-shadow:0 1px 0 rgba(0,0,0,.1);}
-ul.table > li.header > div{padding:4px 8px;color:#666;background:linear-gradient(to bottom,#fff 0,#fff 1px,#f4f7f8 1px);border-bottom:1px solid #b4b4b4;border-top:1px solid #ccc;}
-ul.table > li > div{display:table-cell;padding:4px 8px;vertical-align:middle;border-top:1px solid #e2e7e7;border-left:1px solid #e2e7e7;}
+ul.table > li.header > div{color:#666;background:linear-gradient(to bottom,#fff 0,#fff 1px,#f4f7f8 1px);border-bottom:1px solid #b4b4b4;border-top:1px solid #ccc;}
+ul.table > li > div{display:table-cell;padding:8px 16px;vertical-align:middle;border-top:1px solid #e2e7e7;border-left:1px solid #e2e7e7;}
 ul.table > li > div:last-child{border-right:1px solid #e2e7e7;}
 ul.table > li > div:first-child > img{display:block;}
 ul.table > li > div.right{text-align:right;}

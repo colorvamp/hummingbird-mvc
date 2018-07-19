@@ -10,6 +10,7 @@
 	<link href="{{w.indexURL}}/r/css/index.css" rel="stylesheet"/>
 	<link href="{{w.indexURL}}/r/css/font-awesome.min.css" rel="stylesheet"/>
 	{{#JS.WIDGETS}}
+	<script async type="text/javascript" src="{{w.indexURL}}/r/js/core.js"></script>
 	<script async type="text/javascript" src="{{w.indexURL}}/r/js/widgets/widgets.js"></script>
 	<script async type="text/javascript" src="{{w.indexURL}}/r/js/widgets/widget.table.js"></script>
 	<script async type="text/javascript" src="{{w.indexURL}}/r/js/widgets/widget.list.js"></script>

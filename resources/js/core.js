@@ -69,7 +69,7 @@
 			if( $is.object(o) ){for( var key in o ){if( hasOwnProperty.call(obj, key) ){return false;}}return true;}
 			return false;
 		},
-		array:    function (o) {return (Array.isArray(o) || $type(o.length) === 'number');},
+		array:    function (o) {return (Array.isArray(o));},
 		string:   function (o) {return (typeof o == 'string' || o instanceof String);},
 		object:   function (o) {return (o.constructor.toString().indexOf('function Object()') == 0);},
 		element:  function (o) {return ('nodeType' in o && o.nodeType === 1 && 'cloneNode' in o);},

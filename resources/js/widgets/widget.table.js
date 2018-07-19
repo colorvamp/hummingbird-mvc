@@ -30,10 +30,6 @@
 			this.input.setAttribute('checked','checked');
 		}
 
-		this._container.addEventListener('widget-add-item',function(e){
-			if( $is.empty('detail.item',e) ){return false;}
-			this.on_row_add(e.detail.item);
-		}.bind(this),false);
 		this._container.addEventListener('widget-item-add',function(e){
 			if ($is.empty('detail.item',e)) {return false;}
 			this.on_row_add(e.detail.item);
@@ -136,8 +132,8 @@
 	widgets.table.prototype.on_row_add = function(item){
 		/* item = {"id":uniqid,"child":true|false,"after":element,"columns":["col1","col2"]} */
 		var _item = document.createElement('LI');
-		if( item.id ){_item.setAttribute('id',item.id);}
-		if( item.child ){_item.classList.add('child');}
+		if (item.id) {_item.setAttribute('id',item.id);}
+		if (item.child) {_item.classList.add('child');}
 
 		var _columns = false;
 		if (!!(item.before)) {
