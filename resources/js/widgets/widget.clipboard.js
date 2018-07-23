@@ -11,7 +11,7 @@
 			var source = document.querySelector(this.getAttribute('data-source'));
 			if ( !source ) { return false; }
 
-			var tmp_txt = document.createElement('textarea');
+			var tmp_txt = document.createElement('TEXTAREA');
 			tmp_txt.style = 'position:absolute;left:-1000px;top:-1000px';
 			document.body.appendChild(tmp_txt);
 			if ( 'INPUT' == source.nodeName && 'text' == source.type ) { tmp_txt.innerHTML = source.value; }
@@ -23,7 +23,7 @@
 	};
 
 	function widgets_clipboard_init ( e ) {
-		var nodeList = Array.prototype.slice.call(document.querySelectorAll('.btn.widget-clipboard'));
+		var nodeList = Array.prototype.slice.call(document.querySelectorAll('.widget-clipboard'));
 		nodeList.forEach(function ( v, k ) { new widgets.clipboard(v); });
 	};
 
