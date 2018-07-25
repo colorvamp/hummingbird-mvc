@@ -17,7 +17,7 @@
 			this.update(document.body);
 		}.bind(this));
 		if (document.readyState === 'complete' || document.readyState === 'loaded' || document.readyState === 'interactive') {
-			this.update();
+			this.update(document.body);
 		}
 	};
 	_widgets.prototype.update = function(target){
