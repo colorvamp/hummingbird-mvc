@@ -334,6 +334,7 @@
 		public $dependencies = [];
 		public $observe = []; /* Observe files to stop in case of change */
 		public $observe_hash = false; /* Hash representing observed files */
+		public $observe_last = false;
 		function __construct($hash = ''){
 			$this->proc   = new _proc();
 			$this->work   = $this->proc->getByID($hash);
@@ -341,9 +342,9 @@
 			foreach( $this->include as $file ){
 				if( file_exists($file) ){include_once($file);}
 			}
-			if( trim(shell_exec('whoami')) == 'root' ){$this->vervose = true;}
-			
-			if( !empty($this->dependencies) ){
+			if( trim(shell_exec('whoami')) == 'root' ){$this->verbose = true;}
+
+			if (!empty($this->dependencies)) {
 				/* Generate observe_hash to check if the files get changes
 				 * over time to control long running workers and reset them */
 				foreach( $this->dependencies as $dependency ){
@@ -351,6 +352,7 @@
 					$this->observe[] = $reflector->getFileName();
 				}
 				$this->observe_hash = $this->fingerprint();
+				$this->observe_last = time();
 			}
 		}
 		function __destruct(){
@@ -376,21 +378,30 @@
 		}
 		function update($current,$total = false){
 			$perc = round($current,2);
-			if( $total ){
+			$op = [];
+			if ($total
+			 && is_numeric($current)
+			 && is_numeric($total)) {
 				$perc = floatval($current/$total);
 				$perc = round($perc * 100,2);
 				$this->work['procCurrent'] = $current;
+				$op['$set']['procCurrent'] = $current;
 			}
 			$this->work['procProgress'] = $perc;
-			$this->proc->save($this->work);
+			$op['$set']['procProgress'] = $perc;
+			$this->proc->findAndModify(['_id'=>$this->work['_id']],$op,['_id'=>true]);
 		}
 		function check(){
-			//FIXME: avoid consecutive calls with a timestamp
-			/* If the libraries this worker depend on changes, we stop the worker
-			 * to recycle the code of this libs */
-			if( $this->fingerprint() != $this->observe_hash ){
-				$this->outln('Forced stop to sync libs',time());
-				exit;
+			if ($this->observe_hash
+			 && $this->observe_last < (time() - 10) ) {
+				/* Avoid consecutive calls with a timestamp */
+				$this->observe_last = time();
+				/* If the libraries this worker depend on changes, we stop the worker
+				 * to recycle the code of this libs */
+				if ($this->fingerprint() != $this->observe_hash) {
+					$this->outln('Forced stop to sync libs',time());
+					exit;
+				}
 			}
 		}
 		function fingerprint(){
@@ -405,13 +416,16 @@
 			$this->proc->save($this->work);
 		}
 		function outln($str = '',$timestamp = true){
-			if( !isset($this->work['procMsgLines']) ){$this->work['procMsgLines'] = [];}
-			if( $timestamp ){$str = '['.date('Y-m-d H:i:s').'] '.$str;}
-			if( $this->verbose ){echo $str;}
-			$this->work['procMsgLines'][] = $str;
-			$this->work['procMsgLines'] = array_slice($this->work['procMsgLines'],0,500);
-			$r = $this->proc->save($this->work);
-			if( isset($r['errorDescription']) ){return $r;}
+			if (!isset($this->work['procMsgLines'])) {$this->work['procMsgLines'] = [];}
+			if ($timestamp) {$str = '['.date('Y-m-d H:i:s').'] '.$str;}
+			if ($this->verbose) {echo $str.PHP_EOL;}
+			$op = [];
+			$op['$push']['procMsgLines'] = [
+				 '$each'=>[$str]
+				,'$slice'=>-500
+			];
+			$r = $this->proc->findAndModify(['_id'=>$this->work['_id']],$op,['_id'=>true]);
+			if (isset($r['errorDescription'])) {return $r;}
 		}
 		function error($error = []){
 			if( !isset($this->work['procError']) ){$this->work['procError'] = [];}
