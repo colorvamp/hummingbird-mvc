@@ -166,6 +166,7 @@
 		function validate(&$data = [],&$oldData = []){return $data;}
 		function save(&$data = [],$params = []){return $this->_save($data,$params);}
 		function iterator($clause = [],$callback = false,$params = []){return $this->_iterator($clause,$callback,$params);}
+		function bulk(&$data = [],$params = []){return $this->_bulk($data,$params);}
 		function search($criteria = '',$params = []){return $this->_search($criteria,$params);}
 		function drop(){return $this->_drop();}
 		function log(&$data = [],&$oldData = []){}
