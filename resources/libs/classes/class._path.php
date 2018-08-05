@@ -53,11 +53,20 @@
 			return $files;
 		}
 		function iterator($glob = '*',$callback = false,$params = []){
+			if ($glob == '*') {
+				/* Make things a bit less memory hungry */
+				foreach (new DirectoryIterator($this->path) as $file) {
+    				if ($file->isDot()) {continue;}
+					$r = $callback($this->path.$file->getFilename());
+					if ($r === 'break') {break;}
+				}
+				return true;
+			}
+
 			$files = glob($this->path.$glob);
-			foreach( $files as &$file ){
+			foreach ($files as $file) {
 				$file = $callback($file);
 			}
-			unset($file);
 			return $files;
 		}
 		function rename($name = ''){
