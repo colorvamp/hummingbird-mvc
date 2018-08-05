@@ -689,16 +689,36 @@
 			$r = $this->collection_get();
 			if( is_array($r) && isset($r['errorDescription']) ){return $r;}
 
+			$errors = [];
 			$dataArray = array_map([$this,'validate'],$dataArray);
+			$dataArray = array_map(function($n) use (&$errors){
+				if (isset($n['errorDescription'])) {$errors[] = $n;return false;}
+				return $n;
+			},$dataArray);
+			$dataArray = array_values(array_filter($dataArray));
+			foreach ($dataArray as &$data) {
+				$this->_clause($data);
+			}
+			unset($data);
 
 			try {
 				$bulk = new MongoDB\Driver\BulkWrite(['ordered' => false]);
 				foreach ($dataArray as $data) { $bulk->insert($data); }
 				$r = $this->client->executeBulkWrite($this->db.'.'.$this->table, $bulk);
 			} catch ( MongoDB\Driver\Exception\Exception $e ) {
-				print_r(['errorCode'=>$e->getCode(),'errorDescription'=>$e->getMessage(),'file'=>__FILE__,'line'=>__LINE__]);
+				return [
+					 'errorCode'=>$e->getCode()
+					,'errorDescription'=>$e->getMessage()
+					,'file'=>__FILE__
+					,'line'=>__LINE__
+					,'inserted'=>0
+					,'errors'=>$errors
+				];
 			}
-			return $r->getInsertedCount();
+			return [
+				 'inserted'=>$r->getInsertedCount()
+				,'errors'=>$errors
+			];
 		}
 		function _search($criteria = '',$params = []){
 			$r = $this->collection_get();
