@@ -30,7 +30,11 @@
 
 	/* INI-loading resources */
 	if (preg_match('/(css|js|images|fonts)\/.*?\.([a-z]{2,4}$)/',$params,$m)) {
-		$m[0] = $_SERVER['DOCUMENT_ROOT'].'/resources/'.urldecode($m[0]);if(!file_exists($m[0])){exit;}
+		$m[0] = 'resources/'.urldecode($m[0]);
+		if (!file_exists($m[0])) {exit;}
+		$path = realpath($m[0]);
+		$must = realpath($_SERVER['DOCUMENT_ROOT'].'/resources/static/');
+		if (strpos($path,$must) !== 0) {exit;}
 		switch ($m[2]) {
 			case 'css': header('Content-type: text/css');ob_start('ob_gzhandler');break;
 			case 'js':  header('Content-type: application/javascript');ob_start('ob_gzhandler');break;
@@ -53,12 +57,12 @@
 	chdir($_SERVER['DOCUMENT_ROOT'].'/resources/libs/');
 	$controllersBase = '../controllers/';
 	include_once('../init.php');
-	do{
+	do {
 		/* Get pagination if any */
 		$d = 0;
 		while (preg_match('/page\/([0-9]+)$/',$params,$m) && ++$d) {
 			if ($d > 1) {common_r($GLOBALS['w.currentURL'],301);}
-			$c = strlen($m[0])+1;
+			$c = strlen($m[0]) + 1;
 			$params = substr($params,0,-$c);
 			$GLOBALS['w.currentURL'] = substr($GLOBALS['w.currentURL'],0,-$c);
 			$GLOBALS['w.page'] = $m[1];
@@ -90,7 +94,7 @@
 		if (isset($unshift)) {array_unshift($params,$unshift);}
 		$command = $controller.'_main';
 		if (function_exists($command)) {break;}
-	}while(false);
+	} while (false);
 	/* END-dispatcher */
 
 	/* INI-template */
