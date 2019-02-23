@@ -42,6 +42,7 @@
 			case 'woff':
 			case 'otf':
 			case 'eot': header('Content-type: application/x-unknown-content-type');break;
+			default: exit;
 		}
 		readfile($m[0]);
 		exit;
