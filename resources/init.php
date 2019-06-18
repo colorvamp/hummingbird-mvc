@@ -37,6 +37,7 @@
 			case '_google_gmail':	include('classes/google/class._google_gmail.php');break;
 
 			case '_shoutbox_sqlite3':	include('classes/class._shoutbox.sqlite3.php');break;
+			case '_proc':	include('classes/class._proc.mongo.php');break;
 				
 		}
 	});
