@@ -30,7 +30,7 @@
 
 	/* INI-loading resources */
 	if (preg_match('/(css|js|images|fonts)\/.*?\.([a-z]{2,4}$)/',$params,$m)) {
-		$m[0] = 'resources/'.urldecode($m[0]);
+		$m[0] = 'resources/static/'.urldecode($m[0]);
 		if (!file_exists($m[0])) {exit;}
 		$path = realpath($m[0]);
 		$must = realpath($_SERVER['DOCUMENT_ROOT'].'/resources/static/');
